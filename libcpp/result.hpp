@@ -47,3 +47,24 @@ private:
     MaybeUninit<T> m_value;
     MaybeUninit<E> m_err;
 };
+
+template<typename T, typename E>
+Result<T, E> Ok(T value)
+{
+    return Result<T, E>(value);
+}
+
+template<typename T, typename E>
+Result<T, E> Err(E err)
+{
+    return Result<T, E>(err);
+}
+
+/*
+    Similar to Rust's `?` operator.
+ */
+#define EXPECT_OK(T, E, RESULT) \
+    if (RESULT .is_err()) return Err<T, E>(RESULT .unwrap_err());
+
+#define EXPECT_OK_AND(T, E, COND, RESULT) \
+    if (RESULT .is_err() && (COND)) return Err<T, E>(RESULT .unwrap_err());

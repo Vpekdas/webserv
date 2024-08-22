@@ -1,3 +1,5 @@
+#pragma once
+
 #include <cstddef>
 #include <exception>
 
@@ -19,10 +21,21 @@ public:
         set(value);
     }
 
+    ~MaybeUninit()
+    {
+        // Since we store the value as a char[], the value needs to be destroyed manually.
+        // Of course only if the value is initialized.
+        if (is_init())
+        {
+            T value = get();
+            (void) value;
+        }
+    }
+
     T get()
     {
         if (!m_init) throw std::exception();
-        return *(T *)(&m_value[0]);
+        return _get_unchecked();
     }
 
     void set(T value)
@@ -32,7 +45,7 @@ public:
         m_init = true;
     }
 
-    bool is_init() const
+    inline bool is_init() const
     {
         return m_init;
     }
@@ -40,4 +53,9 @@ public:
 private:
     char m_value[sizeof(T)];
     bool m_init;
+
+    inline T _get_unchecked()
+    {
+        return *(T *)(&m_value[0]);
+    }
 };
