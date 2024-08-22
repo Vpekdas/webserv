@@ -4,8 +4,8 @@
     Reimplementation of C++11 smart points for C++98.
  */
 
-#include <cstddef>
-#include <cstdint>
+#include <stddef.h>
+#include <stdint.h>
 
 template<typename T>
 class SharedPtr
@@ -19,6 +19,7 @@ public:
 
     SharedPtr(T * ptr)
     {
+        if (!ptr) return;
         m_ptr = ptr;
         m_strong_refs = new uint32_t(1);
     }
