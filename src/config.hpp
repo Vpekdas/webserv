@@ -212,7 +212,8 @@ public:
 class Route : public Deser
 {
 public:
-    Result<int, ConfigError> deserialize(ConfigEntry& from);
+    virtual ~Route() {}
+    virtual Result<int, ConfigError> deserialize(ConfigEntry& from);
 
 private:
     std::string m_url;

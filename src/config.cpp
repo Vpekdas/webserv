@@ -16,10 +16,13 @@ void Config::load_from_file(std::string filename)
     ConfigParser parser;
     Result<int, ConfigError> result = parser.parse(filename);
     if (result.is_err()) result.unwrap_err().print(std::cerr);
-    
+
     for (size_t i = 0; i < parser.root().children().size(); i++)
     {
         ConfigEntry& entry = parser.root().children()[i];
+
+        // std::cout << "entry: " << entry;
+
         if (entry.args()[0].content() == "Routes")
         {
             Result<int, ConfigError> result = m_routes.deserialize(entry);
@@ -320,7 +323,7 @@ Result<int, ConfigError> ConfigParser::parse(std::string filename)
     size_t end = tokens.size();
     size_t index = start;
     Option<Result<ConfigEntry, ConfigError> > maybe_entry;
-    
+
     while ((maybe_entry = _parse(content, tokens, &start, &end, &index)).is_some())
     {
         Result<ConfigEntry, ConfigError> entry = maybe_entry.unwrap();
@@ -338,7 +341,7 @@ ConfigEntry& ConfigParser::root()
 
 static bool _is_space(char c)
 {
-    return c == ' ' || c == '\t' || c == '\v' || c == '\f'; // || c == '\r' || c == '\n' 
+    return c == ' ' || c == '\t' || c == '\v' || c == '\f'; // || c == '\r' || c == '\n'
 }
 
 static bool _is_whitespace(char c)
@@ -421,7 +424,7 @@ static Option<Token> _next_token(size_t *index, std::string source, size_t *line
         return Some(Token::num(std::atoi(source.data()), *line, start_column));
     else if (is_string)
         return Some(Token::str(buf, *line, start_column));
-    
+
     if (!buf.empty())
         return Some(Token::ident(buf, *line, start_column));
     return None<Token>();

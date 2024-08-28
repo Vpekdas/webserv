@@ -1,7 +1,6 @@
 #pragma once
 
 #include <exception>
-#include "maybe_uninit.hpp"
 
 /*
     Implementation of Rust's and C++20's `Option` type in C++98.
@@ -11,52 +10,45 @@ template<typename T>
 class Option
 {
 public:
-    Option()
+    Option() : m_some(false)
     {
     }
 
-    Option(T value) : m_value(MaybeUninit<T>(value))
+    Option(T value) : m_value(value), m_some(true)
     {
     }
 
     T unwrap()
     {
-        if (!m_value.is_init()) throw new std::exception;
-        T value = _get();
-        return value;
+        if (is_none()) throw new std::exception;
+        return m_value;
     }
 
     T unwrap_or(T other)
     {
         if (is_none()) return other;
-        T value = _get();
-        return value;
+        return m_value;
     }
 
     T unwrap_or_default()
     {
         if (is_none()) return T();
-        T value = _get();
-        return value;
+        return m_value;
     }
 
     inline bool is_some() const
     {
-        return m_value.is_init();
+        return m_some;
     }
 
     inline bool is_none() const
     {
-        return !is_some();
+        return !m_some;
     }
 
 private:
-    MaybeUninit<T> m_value;
-
-    T _get()
-    {
-        return m_value.get();
-    }
+    T m_value;
+    bool m_some;
 };
 
 template<typename T>
