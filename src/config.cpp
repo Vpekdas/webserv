@@ -21,8 +21,6 @@ void Config::load_from_file(std::string filename)
     {
         ConfigEntry& entry = parser.root().children()[i];
 
-        // std::cout << "entry: " << entry;
-
         if (entry.args()[0].content() == "Routes")
         {
             Result<int, ConfigError> result = m_routes.deserialize(entry);
@@ -291,6 +289,9 @@ static Option<Result<ConfigEntry, ConfigError> > _parse(
 
     Token& right_curly = tokens[i];
     entry.set_curly(left_curly, right_curly);
+
+    // Not 100% sure of this fix but it seems to work.
+    *index = i + 1;
 
     size_t new_end = i;
     size_t new_index = new_start;
