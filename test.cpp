@@ -4,4 +4,5 @@ int main()
 {
     Config config;
     config.load_from_file("webserv.cfg");
+    
 }
