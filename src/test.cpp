@@ -1,4 +1,4 @@
-#include "src/config.hpp"
+#include "../src/config.hpp"
 
 int main()
 {

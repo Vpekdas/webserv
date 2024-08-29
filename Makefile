@@ -56,17 +56,16 @@ WHITE_BG		:= \033[48;5;15m
 # ================================ SRC FILES ================================= #
 
 SRCS 			:=	$(addprefix $(SRCS_PATH), \
-					main.cpp \
-					config.cpp \
+					polling.cpp \
 )
 
 # ================================ OBJ FILES ================================= #
 
-OBJS 			:=	$(addprefix $(OBJS_PATH), $(notdir $(SRCS:.cpp=.o)))
+OBJS 			:=	$(patsubst $(SRCS_PATH)%.cpp,$(OBJS_PATH)%.o,$(SRCS))
 
 # ================================ DEPS FILES ================================= #
 
-DEPS			:=	$(SRCS:$(SRCS_PATH)%.cpp=$(OBJS_PATH)%.d)
+DEPS			:=	$(patsubst $(SRCS_PATH)%.cpp,$(OBJS_PATH)%.d,$(SRCS))
 
 # ============================= FORMATTING VARS ============================== #
 
@@ -152,6 +151,7 @@ $(NAME): $(OBJS)
 
 $(OBJS_PATH)%.o: $(SRCS_PATH)%.cpp
 	@mkdir -p $(OBJS_PATH)
+#	TODO: @mkdir -p $(OBJS_PATH)/sub directory name
 	@$(CXX) $(CXXFLAGS) $(DEPFLAGS) -c $< -o $@
 	@$(eval FILE_COUNT=$(shell echo $$(($(FILE_COUNT)+1))))
 	@$(eval PERCENT:=$(shell echo $$((100*$(FILE_COUNT)/$(TOTAL)))))
@@ -184,7 +184,7 @@ $(OBJS_PATH)%.o: $(SRCS_PATH)%.cpp
 
 clean:
 	@printf "$(PURPLE)"
-	@$(RM) $(OBJS) obj
+	@$(RM) $(OBJS) $(OBJS_PATH) 
 	@echo "[🧼] $(BYELLOW)Objects $(YELLOW)files have been cleaned from $(PROJECT_NAME) ✔️$(NC)\n"
 
 fclean: clean

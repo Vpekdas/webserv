@@ -23,10 +23,10 @@ int main()
 		return 1;
 	}
 
-	event.events = EPOLLIN;
+	event.events = EPOLLIN | EPOLLET;
 	event.data.fd = 0;
 
-	if(epoll_ctl(epoll_fd, EPOLL_CTL_ADD, 0, &event) == -1)
+	if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, 0, &event) == -1)
 	{
         perror("epoll_ctl() failed\n");
 		close(epoll_fd);
@@ -38,7 +38,7 @@ int main()
 		event_count = epoll_wait(epoll_fd, events, MAX_EVENTS, 3000);
         std::cout << GREEN << event_count << " ready events." << RESET << std::endl;
 		for (int i = 0; i < event_count; i++) {
-            if (events[i].events == EPOLLIN) {
+            if (events[i].events && events[i].events == EPOLLIN) {
             std::cout << CYAN << "Reading file descriptor: " << events[i].data.fd << RESET << std::endl;
 			bytes_read = read(events[i].data.fd, read_buffer, READ_SIZE);
             std::cout << CYAN << "bytes read: " << bytes_read << RESET << std::endl;
