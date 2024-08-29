@@ -1,5 +1,4 @@
 #include "response.hpp"
-#include <fstream>
 #include "request.hpp"
 
 static std::string source =
@@ -31,6 +30,20 @@ static std::string source =
 "    </body>" SEP
 "</html>" SEP;
 
+struct A
+{
+    int code;
+    std::string message;
+};
+
+static A messages[] = {
+    {   0, "" },
+    { 200, "OK" },
+    { 403, "Forbidden" },
+    { 404, "Not Found" },
+    { 418, "I'm a teapot" },
+};
+
 Response::Response() : m_code(200)
 {
 }
@@ -47,9 +60,25 @@ Response Response::ok(int code, std::string source)
     return response;
 }
 
-std::string Response::build()
+static std::string& code_to_str(int code)
 {
-    return m_body;
+    for (size_t i = 0; i < sizeof(messages) / sizeof(A); i++)
+    {
+        if (messages[i].code == code)
+            return messages[i].message;
+    }
+    return messages[0].message;
+}
+
+std::string Response::encode()
+{
+    std::string r;
+
+    r += "HTTP/1.1 " + SSTR(m_code) + " " + code_to_str(m_code) + SEP;
+    r += SEP SEP;
+    r += m_body;
+
+    return r;
 }
 
 static void _replace_all(std::string& src, std::string from, std::string to)
@@ -63,11 +92,7 @@ static void _replace_all(std::string& src, std::string from, std::string to)
 Response Response::httpcat(int code)
 {
     Response response(code);
-
-    std::ifstream ifs("src/error.html");
-    if (!ifs.is_open())
-        return response;
-    std::string content((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
+    std::string content = source;
 
     _replace_all(content, "%{error}", SSTR(code));
     response.m_body = content;

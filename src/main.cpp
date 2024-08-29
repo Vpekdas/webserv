@@ -30,5 +30,5 @@ int main()
     // for (std::map<std::string, std::string>::iterator it = request.m_values.begin(); it != request.m_values.end(); it++)
     //     std::cout << "key = " << it->first << ", value = " << it->second << "\n";
 
-    std::cout << Response::httpcat(418).build() << "\n";
+    std::cout << Response::httpcat(418).encode() << "\n";
 }

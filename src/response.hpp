@@ -15,7 +15,7 @@ public:
     static Response ok(int code, std::string source);
     static Response httpcat(int code);
 
-    std::string build();
+    std::string encode();
 
 public:
     int m_code;
