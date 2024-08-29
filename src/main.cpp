@@ -23,7 +23,6 @@ int main()
 
     listen(fd, 999);
 
-    // char buf[16];
 
     std::string s;
 
