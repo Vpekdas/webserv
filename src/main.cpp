@@ -1,5 +1,5 @@
-#include "request.hpp"
-#include "response.hpp"
+#include "http/request.hpp"
+#include "http/response.hpp"
 #include <cstdio>
 #include <iostream>
 #include <unistd.h>
@@ -9,12 +9,12 @@
 #include <sys/socket.h>
 
 const std::string source =
-    "GET / HTTP/1.1\n"
-    "Content-Type: application/json\n"
-    "\n\n"
-    "{\n"
-    "    \"foo\": \"bar\"\n"
-    "}\n"
+    "GET / HTTP/1.1" SEP
+    "Content-Type: application/json" SEP
+    SEP
+    "{" SEP
+    "    \"foo\": \"bar\"" SEP
+    "}" SEP
 ;
 
 int main()

@@ -75,7 +75,7 @@ std::string Response::encode()
     std::string r;
 
     r += "HTTP/1.1 " + SSTR(m_code) + " " + code_to_str(m_code) + SEP;
-    r += SEP SEP;
+    r += SEP;
     r += m_body;
 
     return r;

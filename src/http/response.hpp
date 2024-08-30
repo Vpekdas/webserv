@@ -17,7 +17,7 @@ public:
 
     std::string encode();
 
-public:
+private:
     int m_code;
     std::string m_body;
 };

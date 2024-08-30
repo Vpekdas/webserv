@@ -22,7 +22,7 @@ public:
     Request();
     bool is_coffee() { return m_args.count("User-Agent") > 0 && m_args["User-Agent"].find("coffee") != std::string::npos; }
 
-private:
+public:
     Method m_method;
     std::string m_path;
     std::map<std::string, std::string> m_args;
