@@ -75,10 +75,19 @@ std::string Response::encode()
     std::string r;
 
     r += "HTTP/1.1 " + SSTR(m_code) + " " + code_to_str(m_code) + SEP;
+
+    for (std::map<std::string, std::string>::iterator it = m_params.begin(); it != m_params.end(); it++)
+        r += it->first + ":" + it->second + SEP;
+
     r += SEP;
     r += m_body;
 
     return r;
+}
+
+void Response::add_param(std::string key, std::string value)
+{
+    m_params[key] = value;
 }
 
 static void _replace_all(std::string& src, std::string from, std::string to)

@@ -9,12 +9,17 @@ Request::Request()
     (void) m_body;
 }
 
+std::string& Request::get_param(std::string key)
+{
+    return m_params[key];
+}
+
 std::vector<std::string> _split(const std::string& s, const std::string& delimiter)
 {
     std::vector<std::string> parts;
     size_t last = 0;
     size_t next = 0;
-    
+
     while ((next = s.find(delimiter, last)) != std::string::npos)
     {
         parts.push_back(s.substr(last, next-last));
@@ -56,7 +61,7 @@ void Request::_parse_path(std::string path)
         pos = args_vec[i].find("=");
         std::string key = args_vec[i].substr(0, pos);
         std::string value;
-        
+
         if (pos == std::string::npos)
             value = "";
         else
@@ -101,7 +106,7 @@ Result<Request, int> Request::parse(std::string source)
         std::string key = lines[i].substr(0, comma);
         std::string value = _trim(lines[i].substr(comma + 1));
 
-        request.m_values[key] = value;
+        request.m_args[key] = value;
     }
 
     return request;
