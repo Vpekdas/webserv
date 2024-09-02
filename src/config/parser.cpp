@@ -1,6 +1,6 @@
 #include "option.hpp"
 #include "result.hpp"
-#include "config.hpp"
+#include "config/config.hpp"
 #include <cstdlib>
 #include <iomanip>
 #include <ostream>
@@ -671,44 +671,4 @@ static std::vector<T> _array_to_vec(T array[], size_t size)
     }
 
     return vec;
-}
-
-Result<int, ConfigError> Route::deserialize(ConfigEntry& from)
-{
-    Arg dirargs[] = {Arg("Path", TOKEN_STRING, &m_directory)};
-    Usage dirusage("Directory", _array_to_vec(dirargs, 1));
-
-    Arg urlargs[] = {Arg("Route", TOKEN_STRING, &m_url)};
-    Usage urlusage("Url", _array_to_vec(urlargs, 1));
-
-    std::vector<Usage> usages;
-    usages.push_back(dirusage);
-    usages.push_back(urlusage);
-
-    for (size_t i = 0; i < from.children().size(); i++)
-    {
-        Result<int, ConfigError> result = _expect_multiple(from.children()[i], usages);
-        EXPECT_OK(int, ConfigError, result);
-    }
-    return Ok<int, ConfigError>(0);
-}
-
-Result<int, ConfigError> Routes::deserialize(ConfigEntry& from)
-{
-    clear();
-
-    for (size_t i = 0; i < from.children().size(); i++)
-    {
-        ConfigEntry& entry = from.children()[0];
-
-        if (entry.args()[0].content() == "Route")
-        {
-            Route route;
-            Result<int, ConfigError> result = route.deserialize(entry);
-            EXPECT_OK(int, ConfigError, result);
-            push_back(route);
-        }
-    }
-
-    return Ok<int, ConfigError>(0);
 }

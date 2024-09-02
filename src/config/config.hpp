@@ -209,29 +209,26 @@ public:
     Result<int, ConfigError> expect_str(std::string& content);
 };
 
-class Route : public Deser
+
+/*
+    Config
+ */
+
+class Server : public Deser
 {
 public:
-    virtual ~Route() {}
     virtual Result<int, ConfigError> deserialize(ConfigEntry& from);
 
 private:
-    std::string m_url;
-    std::string m_directory;
+    int m_listen_port;
+    std::string m_root;
 };
 
-class Routes : public std::vector<Route>, Deser
+class Config : public Deser
 {
 public:
-    Result<int, ConfigError> deserialize(ConfigEntry& from);
-};
-
-class Config
-{
-public:
-    Config();
-    void load_from_file(std::string filename);
+    virtual Result<int, ConfigError> deserialize(ConfigEntry& from);
 
 private:
-    Routes m_routes;
+    std::vector<Server> m_servers;
 };

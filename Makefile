@@ -4,7 +4,7 @@ PROJECT_NAME	:= webserv
 
 # =========================== COMPILER AND FLAGS ============================= #
 CXX				:= clang++
-CXXFLAGS		:= -std=c++98 -Wall -Wextra -Werror -g3 -O3 -I libcpp
+CXXFLAGS		:= -std=c++98 -Wall -Wextra -Werror -g3 -O3 -Ilibcpp -Isrc
 DEPFLAGS		:= -MMD -MP
 
 # ================================= ALIASES ================================== #
@@ -57,6 +57,8 @@ WHITE_BG		:= \033[48;5;15m
 
 SRCS 			:=	$(addprefix $(SRCS_PATH), \
 					polling.cpp \
+					status.cpp \
+					file.cpp \
 					http/request.cpp \
 					http/response.cpp \
 )

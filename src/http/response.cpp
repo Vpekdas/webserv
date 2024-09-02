@@ -1,5 +1,6 @@
 #include "response.hpp"
 #include "request.hpp"
+#include <sstream>
 
 static std::string source =
 "<!DOCTYPE html>" SEP
@@ -36,26 +37,18 @@ struct A
     std::string message;
 };
 
-static A messages[] = {
-    {   0, "" },
-    { 200, "OK" },
-    { 403, "Forbidden" },
-    { 404, "Not Found" },
-    { 418, "I'm a teapot" },
-};
-
-Response::Response() : m_code(200)
+Response::Response() : m_status(200)
 {
 }
 
-Response::Response(int code) : m_code(code)
+Response::Response(HttpStatus status) : m_status(status)
 {
     (void) m_body;
 }
 
-Response Response::ok(int code, std::string source)
+Response Response::ok(HttpStatus status, std::string source)
 {
-    Response response(code);
+    Response response(status);
     response.m_body = source;
 
     response.add_param("Content-Length", SSTR(source.size()));
@@ -64,29 +57,19 @@ Response Response::ok(int code, std::string source)
     return response;
 }
 
-static std::string& code_to_str(int code)
-{
-    for (size_t i = 0; i < sizeof(messages) / sizeof(A); i++)
-    {
-        if (messages[i].code == code)
-            return messages[i].message;
-    }
-    return messages[0].message;
-}
-
 std::string Response::encode()
 {
-    std::string r;
+    std::stringstream r;
 
-    r += "HTTP/1.1 " + SSTR(m_code) + " " + code_to_str(m_code) + SEP;
+    r << "HTTP/1.1 " << SSTR(m_status) << " " << m_status << SEP;
 
     for (std::map<std::string, std::string>::iterator it = m_params.begin(); it != m_params.end(); it++)
-        r += it->first + ": " + it->second + SEP;
+        r << it->first << ": " << it->second << SEP;
 
-    r += SEP;
-    r += m_body;
+    r << SEP;
+    r << m_body;
 
-    return r;
+    return r.str();
 }
 
 void Response::add_param(std::string key, std::string value)
@@ -102,12 +85,12 @@ static void _replace_all(std::string& src, std::string from, std::string to)
         src.replace(i, from.size(), to);
 }
 
-Response Response::httpcat(int code)
+Response Response::httpcat(HttpStatus status)
 {
-    Response response(code);
+    Response response(status);
     std::string content = source;
 
-    _replace_all(content, "%{error}", SSTR(code));
+    _replace_all(content, "%{error}", SSTR(status.code()));
     response.m_body = content;
 
     response.add_param("Content-Type", "text/html");
