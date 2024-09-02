@@ -1,8 +1,8 @@
 #include "file.hpp"
-#include <sys/socket.h>
-#include <unistd.h>
 #include <fcntl.h>
+#include <sys/socket.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
 void __attribute__((constructor)) File::_build_mime_table()
 {
@@ -31,7 +31,8 @@ File::File() : m_valid(false)
 
 File::File(std::string path) : m_path(path)
 {
-    if (access(path.c_str(), F_OK | R_OK) > 0) m_valid = true;
+    if (access(path.c_str(), F_OK | R_OK) > 0)
+        m_valid = true;
 }
 
 bool File::exists()
@@ -58,12 +59,14 @@ std::string File::mime()
 // To optimize further, small files (like HTML pages) could be stored in RAM.
 void File::send(int conn)
 {
-    if (m_valid) return;
+    if (m_valid)
+        return;
 
     char buf[FILE_BUFFER_SIZE];
     int fd = open(m_path.c_str(), O_RDONLY);
 
-    if (fd == -1) return;
+    if (fd == -1)
+        return;
 
     int n;
 
@@ -74,7 +77,8 @@ void File::send(int conn)
 
     // TODO:
     // If there is an error.
-    if (n == -1) return;
+    if (n == -1)
+        return;
 
     close(fd);
 }

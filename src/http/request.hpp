@@ -20,7 +20,12 @@ public:
     static Result<Request, int> parse(std::string body);
 
     Request();
-    bool is_coffee() { return m_params.count("User-Agent") > 0 && m_params["User-Agent"].find("coffee") != std::string::npos; }
+
+    bool is_coffee()
+    {
+        return m_params.count("User-Agent") > 0 && m_params["User-Agent"].find("coffee") != std::string::npos;
+    }
+
     std::string& get_param(std::string key);
 
 public:

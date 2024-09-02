@@ -5,9 +5,9 @@
 
 Request::Request()
 {
-    (void) m_method;
-    (void) m_protocol;
-    (void) m_body;
+    (void)m_method;
+    (void)m_protocol;
+    (void)m_body;
 }
 
 std::string& Request::get_param(std::string key)
@@ -23,7 +23,7 @@ std::vector<std::string> _split(const std::string& s, const std::string& delimit
 
     while ((next = s.find(delimiter, last)) != std::string::npos)
     {
-        parts.push_back(s.substr(last, next-last));
+        parts.push_back(s.substr(last, next - last));
         last = next + 1;
     }
     parts.push_back(s.substr(last));
@@ -52,7 +52,8 @@ std::string _trim(std::string s)
 void Request::_parse_path(std::string path)
 {
     size_t pos = path.find("?");
-    if (pos == std::string::npos) return;
+    if (pos == std::string::npos)
+        return;
 
     std::string args_str = path.substr(pos);
     std::vector<std::string> args_vec = _split(args_str, "&");
@@ -79,11 +80,13 @@ Result<Request, int> Request::parse(std::string source)
 
     // We need at leat the `GET / HTTP/1.1`
 
-    if (lines.size() == 0) return Err<Request, int>(0);
+    if (lines.size() == 0)
+        return Err<Request, int>(0);
 
     std::vector<std::string> request_line = _split(lines[0], " ");
 
-    if (request_line.size() != 3) return Err<Request, int>(0);
+    if (request_line.size() != 3)
+        return Err<Request, int>(0);
 
     std::string method = request_line[0];
     std::string path = request_line[1];
@@ -91,11 +94,16 @@ Result<Request, int> Request::parse(std::string source)
 
     Request request;
 
-    if (method == "GET") request.m_method = GET;
-    else if (method == "POST") request.m_method = POST;
-    else if (method == "DELETE") request.m_method = DELETE;
-    else if (method == "HEAD") request.m_method = HEAD;
-    else return Err<Request, int>(0);
+    if (method == "GET")
+        request.m_method = GET;
+    else if (method == "POST")
+        request.m_method = POST;
+    else if (method == "DELETE")
+        request.m_method = DELETE;
+    else if (method == "HEAD")
+        request.m_method = HEAD;
+    else
+        return Err<Request, int>(0);
 
     request.m_protocol = protocol;
     request.m_path = path.substr(0, path.find("="));

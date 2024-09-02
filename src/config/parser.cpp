@@ -1,11 +1,11 @@
+#include "config/config.hpp"
 #include "option.hpp"
 #include "result.hpp"
-#include "config/config.hpp"
 #include <cstdlib>
-#include <iomanip>
-#include <ostream>
 #include <fstream>
+#include <iomanip>
 #include <iostream>
+#include <ostream>
 
 Config::Config()
 {
@@ -15,7 +15,8 @@ void Config::load_from_file(std::string filename)
 {
     ConfigParser parser;
     Result<int, ConfigError> result = parser.parse(filename);
-    if (result.is_err()) result.unwrap_err().print(std::cerr);
+    if (result.is_err())
+        result.unwrap_err().print(std::cerr);
 
     for (size_t i = 0; i < parser.root().children().size(); i++)
     {
@@ -24,7 +25,8 @@ void Config::load_from_file(std::string filename)
         if (entry.args()[0].content() == "Routes")
         {
             Result<int, ConfigError> result = m_routes.deserialize(entry);
-            if (result.is_err()) result.unwrap_err().print(std::cerr);
+            if (result.is_err())
+                result.unwrap_err().print(std::cerr);
         }
         else
         {
@@ -160,14 +162,30 @@ std::ostream& operator<<(std::ostream& os, Token const& tok)
 
     switch (tok.type())
     {
-    case TOKEN_IDENTIFIER: type = "Ident"; break;
-    case TOKEN_NUMBER: type = "Number"; break;
-    case TOKEN_STRING: type = "String"; break;
-    case TOKEN_LEFT_CURLY: type = "`{`"; break;
-    case TOKEN_RIGHT_CURLY: type = "`}`"; break;
-    case TOKEN_LINE_BREAK: type = "`\\n`"; break;
-    case TOKEN_INVALID: type = "INVALID"; break;
-    case TOKEN_EOF: type = "EOF"; break;
+    case TOKEN_IDENTIFIER:
+        type = "Ident";
+        break;
+    case TOKEN_NUMBER:
+        type = "Number";
+        break;
+    case TOKEN_STRING:
+        type = "String";
+        break;
+    case TOKEN_LEFT_CURLY:
+        type = "`{`";
+        break;
+    case TOKEN_RIGHT_CURLY:
+        type = "`}`";
+        break;
+    case TOKEN_LINE_BREAK:
+        type = "`\\n`";
+        break;
+    case TOKEN_INVALID:
+        type = "INVALID";
+        break;
+    case TOKEN_EOF:
+        type = "EOF";
+        break;
     }
 
     os << "Token { type = " << type;
@@ -222,18 +240,14 @@ ConfigParser::~ConfigParser()
 
 // This will only parse one entry of the file until there is no more entries between `start` and `end`.
 // `index` is a cursor which will be updated for each call.
-static Option<Result<ConfigEntry, ConfigError> > _parse(
-    std::string& source,
-    std::vector<Token>& tokens,
-    size_t *start,
-    size_t *end,
-    size_t *index)
+static Option<Result<ConfigEntry, ConfigError>> _parse(std::string& source, std::vector<Token>& tokens, size_t *start,
+                                                       size_t *end, size_t *index)
 {
     // Two possibles possible entries:
     // 1. An inline entry ended by a line return
     // 2. A group entries which contains a body with curly brackets
 
-    (void) start;
+    (void)start;
 
     ConfigEntry entry;
     size_t i = *index;
@@ -242,7 +256,8 @@ static Option<Result<ConfigEntry, ConfigError> > _parse(
     {
     }
 
-    if (i >= *end) return None<Result<ConfigEntry, ConfigError> >();
+    if (i >= *end)
+        return None<Result<ConfigEntry, ConfigError>>();
 
     for (; i < *end && (tokens[i].type() != TOKEN_LINE_BREAK && tokens[i].type() != TOKEN_LEFT_CURLY); i++)
     {
@@ -263,7 +278,8 @@ static Option<Result<ConfigEntry, ConfigError> > _parse(
     else if (tokens[i].type() == TOKEN_LEFT_CURLY && entry.args().size() == 0)
     {
         // A lone `{` without any arguments
-        return Some(Err<ConfigEntry, ConfigError>(ConfigError::unexpected(source, tokens[i], TOKEN_IDENTIFIER))); // TODO: Maybe create a new error ?
+        return Some(Err<ConfigEntry, ConfigError>(
+            ConfigError::unexpected(source, tokens[i], TOKEN_IDENTIFIER))); // TODO: Maybe create a new error ?
     }
     else if (tokens[i].type() != TOKEN_LEFT_CURLY)
     {
@@ -280,12 +296,19 @@ static Option<Result<ConfigEntry, ConfigError> > _parse(
     bool end_reached = false;
     for (; i < *end; i++)
     {
-        if (tokens[i].type() == TOKEN_RIGHT_CURLY && open == 0) { end_reached = true; break; }
-        else if (tokens[i].type() == TOKEN_LEFT_CURLY) open++;
-        else if (tokens[i].type() == TOKEN_RIGHT_CURLY) open--;
+        if (tokens[i].type() == TOKEN_RIGHT_CURLY && open == 0)
+        {
+            end_reached = true;
+            break;
+        }
+        else if (tokens[i].type() == TOKEN_LEFT_CURLY)
+            open++;
+        else if (tokens[i].type() == TOKEN_RIGHT_CURLY)
+            open--;
     }
 
-    if (open != 0 || !end_reached) return Err<ConfigEntry, ConfigError>(ConfigError::mismatch_curly(source, left_curly));
+    if (open != 0 || !end_reached)
+        return Err<ConfigEntry, ConfigError>(ConfigError::mismatch_curly(source, left_curly));
 
     Token& right_curly = tokens[i];
     entry.set_curly(left_curly, right_curly);
@@ -295,7 +318,7 @@ static Option<Result<ConfigEntry, ConfigError> > _parse(
 
     size_t new_end = i;
     size_t new_index = new_start;
-    Option<Result<ConfigEntry, ConfigError> > maybe_entry;
+    Option<Result<ConfigEntry, ConfigError>> maybe_entry;
 
     while ((maybe_entry = _parse(source, tokens, &new_start, &new_end, &new_index)).is_some())
     {
@@ -310,7 +333,8 @@ static Option<Result<ConfigEntry, ConfigError> > _parse(
 Result<int, ConfigError> ConfigParser::parse(std::string filename)
 {
     std::ifstream ifs(filename.data());
-    if (!ifs.is_open()) return Err<int, ConfigError>(ConfigError::not_found(filename));
+    if (!ifs.is_open())
+        return Err<int, ConfigError>(ConfigError::not_found(filename));
     std::string content((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
 
     std::vector<Token> tokens = _read_tokens(content);
@@ -323,7 +347,7 @@ Result<int, ConfigError> ConfigParser::parse(std::string filename)
     size_t start = 0;
     size_t end = tokens.size();
     size_t index = start;
-    Option<Result<ConfigEntry, ConfigError> > maybe_entry;
+    Option<Result<ConfigEntry, ConfigError>> maybe_entry;
 
     while ((maybe_entry = _parse(content, tokens, &start, &end, &index)).is_some())
     {
@@ -364,7 +388,8 @@ static Option<Token> _next_token(size_t *index, std::string source, size_t *line
     size_t i = *index;
     bool is_string = false;
 
-    if (i >= source.size()) return None<Token>();
+    if (i >= source.size())
+        return None<Token>();
 
     while (i < source.size() && _is_space(source[i]))
     {
@@ -500,7 +525,8 @@ static std::string _spaces(size_t n)
 {
     std::string s;
 
-    if (n == (size_t)-1) return "";
+    if (n == (size_t)-1)
+        return "";
     for (size_t i = 0; i < n; i++)
         s += " ";
     return s;
@@ -533,8 +559,7 @@ std::string ConfigError::_strerror()
         return "Expected inline declaration for `" + m_token.content() + "`";
     case MISMATCH_CURLY:
         return "Mismatch curly brackets";
-    case MISMATCH_ENTRY:
-    {
+    case MISMATCH_ENTRY: {
         std::string usage;
 
         usage += m_mismatch_entry.usage.name();
@@ -544,13 +569,14 @@ std::string ConfigError::_strerror()
 
         return "Invalid entry, expected usage is `" + usage + "`";
     }
-    case UNKNOWN_ENTRY:
-    {
+    case UNKNOWN_ENTRY: {
         std::string list;
 
-        if (m_unknown.entries.size() > 0) list = "`" + m_unknown.entries[0] + "`";
+        if (m_unknown.entries.size() > 0)
+            list = "`" + m_unknown.entries[0] + "`";
 
-        for (size_t i = 1; i < m_unknown.entries.size(); i++) list += ", `" + m_unknown.entries[i] + "`";
+        for (size_t i = 1; i < m_unknown.entries.size(); i++)
+            list += ", `" + m_unknown.entries[i] + "`";
 
         return "Unknown entry `" + m_token.content() + "` expected one of " + list;
     }
@@ -588,19 +614,20 @@ static std::vector<std::string> _split(std::string& s, std::string delimiter)
 
     while ((pos_end = s.find(delimiter, pos_start)) != std::string::npos)
     {
-        token = s.substr (pos_start, pos_end - pos_start);
+        token = s.substr(pos_start, pos_end - pos_start);
         pos_start = pos_end + delim_len;
-        res.push_back (token);
+        res.push_back(token);
     }
 
-    res.push_back (s.substr (pos_start));
+    res.push_back(s.substr(pos_start));
     return res;
 }
 
 void ConfigError::_print_lines(std::ostream& os, int first_line, size_t num)
 {
     std::vector<std::string> lines = _split(m_source, "\n");
-    if (first_line < 0) first_line = 0;
+    if (first_line < 0)
+        first_line = 0;
     for (size_t i = first_line; i < first_line + num && i < lines.size(); i++)
         os << std::setw(2) << (i + 1) << " | " << lines[i] << "\n";
 }
@@ -617,9 +644,11 @@ static Result<int, ConfigError> _expect(ConfigEntry& entry, Usage& usage)
     if (!entry.is_inline())
         return Err<int, ConfigError>(ConfigError::not_inline(entry.source(), entry.args()[0]));
     else if (entry.args().size() - 1 != usage.args().size())
-        return Err<int, ConfigError>(ConfigError::mismatch_entry(entry.source(), entry.args()[0], usage.name(), usage.args()));
+        return Err<int, ConfigError>(
+            ConfigError::mismatch_entry(entry.source(), entry.args()[0], usage.name(), usage.args()));
     else if (entry.args()[0].type() != TOKEN_IDENTIFIER || entry.args()[0].content() != usage.name())
-        return Err<int, ConfigError>(ConfigError::mismatch_entry(entry.source(), entry.args()[0], usage.name(), usage.args()));
+        return Err<int, ConfigError>(
+            ConfigError::mismatch_entry(entry.source(), entry.args()[0], usage.name(), usage.args()));
 
     for (size_t i = 1; i < usage.args().size(); i++)
     {
@@ -627,7 +656,8 @@ static Result<int, ConfigError> _expect(ConfigEntry& entry, Usage& usage)
         Arg& rhs = usage.args()[i];
 
         if (lhs.type() != rhs.type())
-            return Err<int, ConfigError>(ConfigError::mismatch_entry(entry.source(), entry.args()[0], usage.name(), usage.args()));
+            return Err<int, ConfigError>(
+                ConfigError::mismatch_entry(entry.source(), entry.args()[0], usage.name(), usage.args()));
 
         if (rhs.type() == TOKEN_STRING)
         {
@@ -648,19 +678,20 @@ static Result<int, ConfigError> _expect_multiple(ConfigEntry& entry, std::vector
     {
         Result<int, ConfigError> result = _expect(entry, usages[i]);
         EXPECT_OK_AND(int, ConfigError, (entry.args()[0].content() == usages[i].name()), result);
-        if (result.is_ok()) return Ok<int, ConfigError>(0);
+        if (result.is_ok())
+            return Ok<int, ConfigError>(0);
     }
 
     std::vector<std::string> entries;
     entries.reserve(usages.size());
 
-    for (size_t i = 0; i < usages.size(); i++) entries.push_back(usages[i].name());
+    for (size_t i = 0; i < usages.size(); i++)
+        entries.push_back(usages[i].name());
 
     return Err<int, ConfigError>(ConfigError::unknown_entry(entry.source(), entry.args()[0], entries));
 }
 
-template<typename T>
-static std::vector<T> _array_to_vec(T array[], size_t size)
+template <typename T> static std::vector<T> _array_to_vec(T array[], size_t size)
 {
     std::vector<T> vec;
 

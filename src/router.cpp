@@ -5,7 +5,8 @@ static Result<File, HttpStatus> _process_default(std::string path)
 {
     File file(path);
 
-    if (!file.exists()) return Err<File, HttpStatus>(HttpStatus(404));
+    if (!file.exists())
+        return Err<File, HttpStatus>(HttpStatus(404));
 
     return Ok<File, HttpStatus>(file);
 }

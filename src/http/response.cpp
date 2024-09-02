@@ -2,6 +2,7 @@
 #include "request.hpp"
 #include <sstream>
 
+// clang-format off
 static std::string source =
 "<!DOCTYPE html>" SEP
 "<html lang='en'>" SEP
@@ -30,6 +31,7 @@ static std::string source =
 "        <img src='https://http.cat/%{error}'>" SEP
 "    </body>" SEP
 "</html>" SEP;
+// clang-format on
 
 struct A
 {
@@ -43,7 +45,7 @@ Response::Response() : m_status(200)
 
 Response::Response(HttpStatus status) : m_status(status)
 {
-    (void) m_body;
+    (void)m_body;
 }
 
 Response Response::ok(HttpStatus status, std::string source)

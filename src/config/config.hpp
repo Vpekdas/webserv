@@ -63,18 +63,40 @@ public:
     bool is_inline();
     void set_inline(bool b);
 
-    std::vector<Token>& args() { return m_arguments; }
+    std::vector<Token>& args()
+    {
+        return m_arguments;
+    }
     void add_arg(Token tok);
 
-    std::vector<ConfigEntry>& children() { return m_children; }
+    std::vector<ConfigEntry>& children()
+    {
+        return m_children;
+    }
     void add_child(ConfigEntry entry);
 
-    std::string& source() { return m_source; }
-    void set_source(std::string source) { m_source = source; }
+    std::string& source()
+    {
+        return m_source;
+    }
+    void set_source(std::string source)
+    {
+        m_source = source;
+    }
 
-    Token& left_curly() { return m_left_curly; }
-    Token& right_curly() { return m_right_curly; }
-    void set_curly(Token left, Token right) { m_left_curly = left; m_right_curly = right; }
+    Token& left_curly()
+    {
+        return m_left_curly;
+    }
+    Token& right_curly()
+    {
+        return m_right_curly;
+    }
+    void set_curly(Token left, Token right)
+    {
+        m_left_curly = left;
+        m_right_curly = right;
+    }
 
 private:
     std::vector<Token> m_arguments;
@@ -89,16 +111,28 @@ private:
 class Arg
 {
 public:
-    Arg(std::string name, TokenType type, void *ptr, bool optional = false) : m_ptr(ptr), m_type(type), m_name(name), m_optional(optional)
+    Arg(std::string name, TokenType type, void *ptr, bool optional = false)
+        : m_ptr(ptr), m_type(type), m_name(name), m_optional(optional)
     {
     }
 
-    template<typename T>
-    T *ptr() { return (T *) m_ptr; }
+    template <typename T> T *ptr()
+    {
+        return (T *)m_ptr;
+    }
 
-    TokenType type() { return m_type; }
-    std::string& name() { return m_name; }
-    bool optional() { return m_optional; }
+    TokenType type()
+    {
+        return m_type;
+    }
+    std::string& name()
+    {
+        return m_name;
+    }
+    bool optional()
+    {
+        return m_optional;
+    }
 
 private:
     void *m_ptr;
@@ -118,8 +152,14 @@ public:
     {
     }
 
-    std::string& name() { return m_name; }
-    std::vector<Arg>& args() { return m_args; }
+    std::string& name()
+    {
+        return m_name;
+    }
+    std::vector<Arg>& args()
+    {
+        return m_args;
+    }
 
 private:
     std::string m_name;
@@ -208,7 +248,6 @@ public:
     Result<int, ConfigError> expect_ident(std::string& content);
     Result<int, ConfigError> expect_str(std::string& content);
 };
-
 
 /*
     Config

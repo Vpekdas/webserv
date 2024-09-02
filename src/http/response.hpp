@@ -1,13 +1,12 @@
 #pragma once
 
 #include <map>
-#include <string>
 #include <sstream>
+#include <string>
 
 #include "status.hpp"
 
-#define SSTR( x ) static_cast< std::ostringstream & >( \
-        ( std::ostringstream() << std::dec << x ) ).str()
+#define SSTR(x) static_cast<std::ostringstream&>((std::ostringstream() << std::dec << x)).str()
 
 class Response
 {
