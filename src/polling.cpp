@@ -36,13 +36,13 @@ int main() {
   // signal(SIGINT, sigint);
 
   if (epoll_fd == -1) {
-    perror(RED "epoll_create1() failed\n" RESET);
+    std::cerr << NRED << "Error: epoll_create1() failed." << RESET << std::endl;
     return 1;
   }
 
   int sockfd = socket(AF_INET, SOCK_STREAM, 0);
   if (sockfd == -1) {
-    perror(RED "socket() failed\n" RESET);
+    std::cerr << NRED << "Error: socket() failed." << RESET << std::endl;
     return 1;
   }
 
@@ -55,7 +55,7 @@ int main() {
   sockaddr.sin_port = htons(9999);
 
   if (bind(sockfd, (struct sockaddr *)&sockaddr, sizeof(sockaddr)) == -1) {
-    perror(RED "bind failed\n" RESET);
+    std::cerr << NRED << "Error: bind() failed." << RESET << std::endl;
     return 1;
   }
 
@@ -63,14 +63,13 @@ int main() {
   event.data.fd = 0;
 
   if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, sockfd, &event) == -1) {
-    // perror(RED "epoll_ctl() failed\n" RESET);
-    std::cerr << strerror(errno) << ": " RED "epoll_ctl() failed\n" RESET;
+    std::cerr << NRED << "Error: epoll_ctl() failed." << RESET << std::endl;
     close(epoll_fd);
     return 1;
   }
 
   if (listen(sockfd, 42) == -1) {
-    perror(RED "listen failed\n" RESET);
+    std::cerr << NRED << "Error: listen() failed." << RESET << std::endl;
     return 1;
   }
 
@@ -78,7 +77,7 @@ int main() {
   int connection =
       accept(sockfd, (struct sockaddr *)&sockaddr, (socklen_t *)&addrlen);
   if (connection == -1) {
-    perror(RED "accept failed\n" RESET);
+    std::cerr << NRED << "Error: accept() failed" << RESET << std::endl;
     return 1;
   }
 
@@ -89,40 +88,43 @@ int main() {
 
   Request req = Request::parse(buffer).unwrap();
 
-  std::cout << req.m_method << "\n";
-  std::cout << req.m_path << "\n";
-  std::cout << req.m_protocol << "\n";
-  std::cout << "coffee = " << req.is_coffee() << "\n";
-
   Response response = Response::httpcat(401);
+
+  if (req.get_param("Connection") == "keep-alive")
+    response.add_param("Connection", "keep-alive");
+
   std::string body = response.encode();
 
   send(connection, body.data(), body.size(), 0);
 
-  while (main_loop) {
-    std::cout << YELLOW << "Polling for input..." << RESET << std::endl;
-    event_count = epoll_wait(epoll_fd, events, MAX_EVENTS, 10);
+  std::cout << "'" << req.get_param("Connection") << "'\n";
 
-    if (event_count == 0) break; // WTF
+  if (req.get_param("Connection") == "keep-alive")
+  {
+    while (1) {
+      std::cout << YELLOW << "Polling for input..." << RESET << std::endl;
+      event_count = epoll_wait(epoll_fd, events, MAX_EVENTS, -1);
 
-    std::cout << GREEN << event_count << " ready events." << RESET << std::endl;
-    for (int i = 0; i < event_count; i++) {
-      if (events[i].events && events[i].events == EPOLLIN) {
-        std::cout << CYAN << "Reading file descriptor: " << events[i].data.fd
-                  << RESET << std::endl;
-        bytes_read = read(events[i].data.fd, read_buffer, READ_SIZE);
-        std::cout << CYAN << "bytes read: " << bytes_read << RESET << std::endl;
-        read_buffer[bytes_read] = '\0';
-        std::cout << CYAN << "Read: " << read_buffer << RESET << std::endl;
-      } else if (events[i].events && events[i].events == EPOLLOUT) {
+      // if (event_count == 0) break; // WTF
+
+      std::cout << GREEN << event_count << " ready events." << RESET << std::endl;
+      for (int i = 0; i < event_count; i++) {
+        if (events[i].events && events[i].events == EPOLLIN) {
+          std::cout << CYAN << "Reading file descriptor: " << events[i].data.fd
+                    << RESET << std::endl;
+          bytes_read = read(events[i].data.fd, read_buffer, READ_SIZE);
+          std::cout << CYAN << "bytes read: " << bytes_read << RESET << std::endl;
+          read_buffer[bytes_read] = '\0';
+          std::cout << CYAN << "Read: " << read_buffer << RESET << std::endl;
+        } else if (events[i].events && events[i].events == EPOLLOUT) {
+        }
       }
     }
   }
-
   close(connection);
 
   if (close(epoll_fd) == -1) {
-    perror("close() failed\n");
+    std::cerr << NRED << "Error: close() failed" << RESET << std::endl;
     return 1;
   }
 

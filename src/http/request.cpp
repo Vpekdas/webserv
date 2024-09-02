@@ -1,4 +1,5 @@
 #include "request.hpp"
+#include <cctype>
 #include <iostream>
 #include <vector>
 
@@ -34,15 +35,15 @@ std::string _trim(std::string s)
     size_t start;
     size_t end;
 
-    for (start = 0; start < s.size() && s[start] == ' '; start++)
+    for (start = 0; start < s.size() && isspace(s[start]); start++)
     {
     }
 
-    for (end = s.size() - 1; end > 0 && s[end] == ' '; end--)
+    for (end = s.size() - 1; end > 0 && isspace(s[end]); end--) // TODO: recode isspace
     {
     }
 
-    return s.substr(start, end + 1);
+    return s.substr(start, end);
 }
 
 /*
@@ -103,10 +104,11 @@ Result<Request, int> Request::parse(std::string source)
     for (size_t i = 1; i < lines.size(); i++)
     {
         size_t comma = lines[i].find(":");
-        std::string key = lines[i].substr(0, comma);
+        std::string key = _trim(lines[i].substr(0, comma));
         std::string value = _trim(lines[i].substr(comma + 1));
 
-        request.m_args[key] = value;
+        request.m_params[key] = value;
+        std::cout << key << ": " << value << "\n";
     }
 
     return request;
