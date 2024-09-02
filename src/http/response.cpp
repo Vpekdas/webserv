@@ -57,6 +57,10 @@ Response Response::ok(int code, std::string source)
 {
     Response response(code);
     response.m_body = source;
+
+    response.add_param("Content-Length", SSTR(source.size()));
+    response.add_param("Content-Type", "text/html");
+
     return response;
 }
 
@@ -105,6 +109,9 @@ Response Response::httpcat(int code)
 
     _replace_all(content, "%{error}", SSTR(code));
     response.m_body = content;
+
+    response.add_param("Content-Type", "text/html");
+    response.add_param("Content-Length", SSTR(response.m_body.size()));
 
     return response;
 }
