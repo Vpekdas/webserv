@@ -1,3 +1,7 @@
+#include "file.hpp"
+#include "router.hpp"
+#include "smart_pointers.hpp"
+#include "status.hpp"
 #define MAX_EVENTS 5
 #define READ_SIZE 1024
 
@@ -21,9 +25,13 @@
 
 int main()
 {
+    File::_build_mime_table();
+
     int event_count;
-    char read_buffer[READ_SIZE + 1];
+    char read_buffer[READ_SIZE];
     struct epoll_event events[MAX_EVENTS];
+
+    Router router("www");
 
     // Initialize epoll to efficiently manage multiple file descriptors for I/O
     // events.
@@ -97,6 +105,8 @@ int main()
         return 1;
     }
 
+    std::string req_str;
+
     while (1)
     {
         std::cout << YELLOW << "Polling for input..." << RESET << std::endl;
@@ -115,10 +125,11 @@ int main()
                 std::cout << CYAN << "Reading file descriptor: " << events[i].data.fd << RESET << std::endl;
 
                 int bytes_read = recv(events[i].data.fd, read_buffer, READ_SIZE, 0);
-                read_buffer[bytes_read] = '\0';
 
-                std::cout << CYAN << "Reading message: " << read_buffer << RESET << std::endl;
-                std::cout << PURPLE << "bytes read: " << bytes_read << RESET << std::endl;
+                // std::cout << "read_buffer = " << read_buffer << "\n";
+                // std::cout << "bytes_read = " << bytes_read << "\n";
+
+                req_str.append(read_buffer, bytes_read);
 
                 // Modify the event to monitor the file descriptor for outgoing data.
                 // This is necessary to prepare the server to send a response back to
@@ -140,17 +151,19 @@ int main()
             // the server can handle write operations when the socket is ready.
             else if ((events[i].events & EPOLLOUT) == EPOLLOUT)
             {
-                Response response = Response::httpcat(401);
+                Request req = Request::parse(req_str).unwrap();
+                req_str.clear();
+                Result<File *, HttpStatus> res = router.route(req.path());
+
+                Response response;
+
+                if (res.is_err())
+                    response = Response::httpcat(res.unwrap_err());
+                else
+                    response = Response::ok(200, res.unwrap());
+
                 response.add_param("Connection", "keep-alive");
-
-                std::string body = response.encode();
-
-                std::cout << YELLOW << "Sending message..." << RESET << std::endl;
-
-                if (send(connection, body.data(), body.size(), 0) == -1)
-                {
-                    std::cerr << NRED << strerror(errno) << RED << ": send() failed." << RESET << std::endl;
-                }
+                response.send(connection);
 
                 // Modify the event to monitor the file descriptor for outgoing data.
                 // This is necessary to prepare the server to send a response back to

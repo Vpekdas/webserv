@@ -9,31 +9,61 @@
 class File
 {
 public:
-    File();
-    File(std::string path);
+    virtual ~File()
+    {
+    }
 
     /*
         Returns `true` if the file exists.
      */
-    bool exists();
+    virtual bool exists() = 0;
 
-    size_t file_size();
+    /*
+        Returns the size of the file.
+     */
+    virtual size_t file_size() = 0;
 
     /*
         Return the mime of the file (e.g. `text/html`, `application/json`)
      */
-    std::string mime();
+    virtual std::string mime() = 0;
 
     /*
         Send the file through a connection fd with `send`.
      */
-    void send(int conn);
+    virtual void send(int conn) = 0;
+
+    static void _build_mime_table();
+
+protected:
+    static std::map<std::string, std::string> mimes;
+};
+
+class StreamFile : public File
+{
+public:
+    StreamFile(std::string path);
+
+    virtual bool exists();
+    virtual size_t file_size();
+    virtual std::string mime();
+    virtual void send(int conn);
 
 private:
     std::string m_path;
-    bool m_valid;
+};
 
-    static std::map<std::string, std::string> mimes;
+class StringFile : public File
+{
+public:
+    StringFile(std::string source, std::string mime);
 
-    static void _build_mime_table();
+    virtual bool exists();
+    virtual size_t file_size();
+    virtual std::string mime();
+    virtual void send(int conn);
+
+private:
+    std::string m_mime;
+    std::string m_content;
 };

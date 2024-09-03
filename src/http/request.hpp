@@ -28,7 +28,12 @@ public:
 
     std::string& get_param(std::string key);
 
-public:
+    std::string& path()
+    {
+        return m_path;
+    }
+
+private:
     Method m_method;
     std::string m_path;
     std::map<std::string, std::string> m_params;

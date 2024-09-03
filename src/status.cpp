@@ -33,6 +33,8 @@ std::ostream& operator<<(std::ostream& os, HttpStatus const& error)
     case 404:
         os << "Not found";
         break;
+    default:
+        os << "";
     }
     return os;
 }

@@ -1,10 +1,14 @@
 #include "file.hpp"
 #include <fcntl.h>
+#include <map>
+#include <string>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
-void __attribute__((constructor)) File::_build_mime_table()
+std::map<std::string, std::string> File::mimes;
+
+void File::_build_mime_table()
 {
     // Reference:
     // https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types
@@ -25,31 +29,29 @@ void __attribute__((constructor)) File::_build_mime_table()
     mimes["text"] = "text/plain";
 }
 
-File::File() : m_valid(false)
+/*
+    StreamFile
+ */
+
+StreamFile::StreamFile(std::string path) : m_path(path)
 {
 }
 
-File::File(std::string path) : m_path(path)
+bool StreamFile::exists()
 {
-    if (access(path.c_str(), F_OK | R_OK) > 0)
-        m_valid = true;
+    return access(m_path.c_str(), F_OK | R_OK) == 0;
 }
 
-bool File::exists()
-{
-    return m_valid;
-}
-
-size_t File::file_size()
+size_t StreamFile::file_size()
 {
     struct stat s;
 
-    if ((stat(m_path.c_str(), &s)) == -1)
+    if ((stat(m_path.c_str(), &s)) != 0)
         return (size_t)-1;
     return s.st_size;
 }
 
-std::string File::mime()
+std::string StreamFile::mime()
 {
     std::string ext = m_path.substr(m_path.find('.') + 1);
     return mimes[ext];
@@ -57,9 +59,9 @@ std::string File::mime()
 
 // TODO:
 // To optimize further, small files (like HTML pages) could be stored in RAM.
-void File::send(int conn)
+void StreamFile::send(int conn)
 {
-    if (m_valid)
+    if (!exists())
         return;
 
     char buf[FILE_BUFFER_SIZE];
@@ -68,17 +70,52 @@ void File::send(int conn)
     if (fd == -1)
         return;
 
-    int n;
+    ssize_t n;
 
     while ((n = read(fd, buf, FILE_BUFFER_SIZE)) > 0)
     {
         ::send(conn, buf, n, 0);
     }
 
+    close(fd);
+
     // TODO:
     // If there is an error.
     if (n == -1)
         return;
+}
 
-    close(fd);
+/*
+    StringFile
+ */
+
+StringFile::StringFile(std::string content, std::string mime) : m_mime(mime), m_content(content)
+{
+}
+
+bool StringFile::exists()
+{
+    return true;
+}
+
+size_t StringFile::file_size()
+{
+    return m_content.size();
+}
+
+std::string StringFile::mime()
+{
+    return m_mime;
+}
+
+void StringFile::send(int conn)
+{
+    ssize_t n;
+
+    n = ::send(conn, m_content.c_str(), file_size(), 0);
+
+    // TODO:
+    // If there is an error.
+    if (n == -1)
+        return;
 }

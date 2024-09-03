@@ -116,7 +116,6 @@ Result<Request, int> Request::parse(std::string source)
         std::string value = _trim(lines[i].substr(comma + 1));
 
         request.m_params[key] = value;
-        std::cout << key << ": " << value << "\n";
     }
 
     return request;

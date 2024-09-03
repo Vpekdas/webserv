@@ -4,6 +4,8 @@
 #include <sstream>
 #include <string>
 
+#include "file.hpp"
+#include "smart_pointers.hpp"
 #include "status.hpp"
 
 #define SSTR(x) static_cast<std::ostringstream&>((std::ostringstream() << std::dec << x)).str()
@@ -14,14 +16,14 @@ public:
     Response();
     Response(HttpStatus status);
 
-    static Response ok(HttpStatus status, std::string source);
+    static Response ok(HttpStatus status, SharedPtr<File> file);
     static Response httpcat(HttpStatus status);
 
-    std::string encode();
     void add_param(std::string key, std::string value);
+    void send(int conn);
 
 private:
     HttpStatus m_status;
-    std::string m_body;
+    SharedPtr<File> m_body;
     std::map<std::string, std::string> m_params;
 };

@@ -59,6 +59,7 @@ SRCS 			:=	$(addprefix $(SRCS_PATH), \
 					polling.cpp \
 					status.cpp \
 					file.cpp \
+					router.cpp \
 					http/request.cpp \
 					http/response.cpp \
 )
@@ -185,11 +186,11 @@ $(OBJS_PATH)%.o: $(SRCS_PATH)%.cpp
 	done
 	@printf "$(CURS_UP)$(CURS_UP)"
 	@printf "\b\b\b\b\b$(A_BLACK)$(WHITE_BG)$(BOLD)%3d%%$(NC)\r" $(PERCENT)
-#	========================================================== 
+#	==========================================================
 
 clean:
 	@printf "$(PURPLE)"
-	@$(RM) $(OBJS) $(OBJS_PATH) 
+	@$(RM) $(OBJS) $(OBJS_PATH)
 	@echo "[🧼] $(BYELLOW)Objects $(YELLOW)files have been cleaned from $(PROJECT_NAME) ✔️$(NC)\n"
 
 fclean: clean

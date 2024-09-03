@@ -1,12 +1,13 @@
 #pragma once
 
 #include <exception>
+#include <stdexcept>
 
 /*
     Implementation of Rust's `Result` type.
  */
 
-template<typename T, typename E>
+template <typename T, typename E>
 class Result
 {
 public:
@@ -24,13 +25,15 @@ public:
 
     T unwrap()
     {
-        if (is_err()) throw std::exception();
+        if (is_err())
+            throw std::runtime_error("Called `Result::unwrap` on Err");
         return m_value;
     }
 
     E unwrap_err()
     {
-        if (is_ok()) throw std::exception();
+        if (is_ok())
+            throw std::runtime_error("Called `Result::unwrap` on Err");
         return m_err;
     }
 
@@ -50,13 +53,13 @@ private:
     bool m_ok;
 };
 
-template<typename T, typename E>
+template <typename T, typename E>
 Result<T, E> Ok(T value)
 {
     return Result<T, E>(value);
 }
 
-template<typename T, typename E>
+template <typename T, typename E>
 Result<T, E> Err(E err)
 {
     return Result<T, E>(err);
@@ -65,8 +68,10 @@ Result<T, E> Err(E err)
 /*
     Similar to Rust's `?` operator.
  */
-#define EXPECT_OK(T, E, RESULT) \
-    if (RESULT .is_err()) return Err<T, E>(RESULT .unwrap_err());
+#define EXPECT_OK(T, E, RESULT)                                                                                        \
+    if (RESULT.is_err())                                                                                               \
+        return Err<T, E>(RESULT.unwrap_err());
 
-#define EXPECT_OK_AND(T, E, COND, RESULT) \
-    if (RESULT .is_err() && (COND)) return Err<T, E>(RESULT .unwrap_err());
+#define EXPECT_OK_AND(T, E, COND, RESULT)                                                                              \
+    if (RESULT.is_err() && (COND))                                                                                     \
+        return Err<T, E>(RESULT.unwrap_err());

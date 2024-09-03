@@ -1,6 +1,10 @@
 #include "response.hpp"
+#include "file.hpp"
 #include "request.hpp"
+#include "smart_pointers.hpp"
 #include <sstream>
+#include <sys/socket.h>
+#include <sys/types.h>
 
 // clang-format off
 static std::string source =
@@ -33,12 +37,6 @@ static std::string source =
 "</html>" SEP;
 // clang-format on
 
-struct A
-{
-    int code;
-    std::string message;
-};
-
 Response::Response() : m_status(200)
 {
 }
@@ -48,18 +46,18 @@ Response::Response(HttpStatus status) : m_status(status)
     (void)m_body;
 }
 
-Response Response::ok(HttpStatus status, std::string source)
+Response Response::ok(HttpStatus status, SharedPtr<File> file)
 {
     Response response(status);
-    response.m_body = source;
+    response.m_body = file;
 
-    response.add_param("Content-Length", SSTR(source.size()));
-    response.add_param("Content-Type", "text/html");
+    response.add_param("Content-Length", SSTR(file->file_size()));
+    response.add_param("Content-Type", file->mime());
 
     return response;
 }
 
-std::string Response::encode()
+void Response::send(int conn)
 {
     std::stringstream r;
 
@@ -69,9 +67,14 @@ std::string Response::encode()
         r << it->first << ": " << it->second << SEP;
 
     r << SEP;
-    r << m_body;
 
-    return r.str();
+    std::string rstr = r.str();
+
+    // TODO: Check errors (including SIGPIPE)
+    ssize_t s = ::send(conn, rstr.c_str(), rstr.size(), 0);
+    (void)s;
+
+    m_body->send(conn);
 }
 
 void Response::add_param(std::string key, std::string value)
@@ -93,10 +96,10 @@ Response Response::httpcat(HttpStatus status)
     std::string content = source;
 
     _replace_all(content, "%{error}", SSTR(status.code()));
-    response.m_body = content;
+    response.m_body = make_shared<File>(new StringFile(content, "text/html"));
 
     response.add_param("Content-Type", "text/html");
-    response.add_param("Content-Length", SSTR(response.m_body.size()));
+    response.add_param("Content-Length", SSTR(response.m_body->file_size()));
 
     return response;
 }
