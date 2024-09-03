@@ -3,4 +3,5 @@ BasedOnStyle: Microsoft
 IndentWidth: 4
 ReferenceAlignment: Left
 AccessModifierOffset: -4
+AlwaysBreakTemplateDeclarations: Yes
 ---
