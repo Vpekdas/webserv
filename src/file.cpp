@@ -29,6 +29,11 @@ void File::_build_mime_table()
     mimes["text"] = "text/plain";
 }
 
+std::string& File::mime_from_ext(std::string ext)
+{
+    return mimes[ext];
+}
+
 /*
     StreamFile
  */

@@ -24,7 +24,7 @@ public:
     virtual size_t file_size() = 0;
 
     /*
-        Return the mime of the file (e.g. `text/html`, `application/json`)
+        Return the mime of the file (e.g. `text/html`, `application/json`).
      */
     virtual std::string mime() = 0;
 
@@ -33,6 +33,7 @@ public:
      */
     virtual void send(int conn) = 0;
 
+    static std::string& mime_from_ext(std::string ext);
     static void _build_mime_table();
 
 protected:

@@ -1,5 +1,7 @@
 #include "router.hpp"
+#include "cgi/cgi.hpp"
 #include "file.hpp"
+#include "http/request.hpp"
 #include "result.hpp"
 #include "smart_pointers.hpp"
 #include "status.hpp"
@@ -7,32 +9,48 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-static Result<File *, HttpStatus> _process_default(std::string path)
-{
-    struct stat s;
-    File *file;
-
-    if (stat(path.c_str(), &s) == 0 && S_ISDIR(s.st_mode))
-        file = new StreamFile(path + "/index.html");
-    else
-        file = new StreamFile(path);
-
-    if (file->exists())
-        return Result<File *, HttpStatus>(file);
-    return Err<File *, HttpStatus>(404);
-}
-
 Router::Router(std::string root) : m_root(root)
 {
+    m_cgis["php"] = CGI("/usr/bin/php-cgi");
 }
 
 Result<File *, HttpStatus> Router::route(std::string path)
 {
     std::string full_path = m_root + "/" + path;
-    size_t ext_pos = full_path.find('.');
     std::string ext = full_path.substr(full_path.find('.') + 1);
 
-    if (ext_pos == std::string::npos || m_processor.count(ext) == 0)
-        return _process_default(full_path);
-    return m_processor[ext](full_path);
+    struct stat sb;
+
+    // A special case: append `index.html` or `index.php` if `path` is a directory.
+    // TODO: If both exists, which one has the priority ?
+    if ((stat(full_path.c_str(), &sb) != -1) && S_ISDIR(sb.st_mode))
+    {
+        std::string new_path = full_path + "/index.php";
+
+        if (access(new_path.c_str(), F_OK | R_OK) != -1)
+            full_path = new_path;
+        else
+            full_path = full_path + "/index.html";
+    }
+
+    // Either go through a CGI or send the file.
+
+    if (access(full_path.c_str(), F_OK | R_OK) == -1)
+        return Err<File *, HttpStatus>(404);
+
+    File *file = NULL;
+
+    if (m_cgis.count(ext) > 0)
+    {
+        std::string s = m_cgis[ext].process(full_path);
+        s = s.substr(s.find(SEP SEP) + 2);
+
+        file = new StringFile(s, File::mime_from_ext("html"));
+    }
+    else
+    {
+        file = new StreamFile(full_path);
+    }
+
+    return Ok<File *, HttpStatus>(file);
 }

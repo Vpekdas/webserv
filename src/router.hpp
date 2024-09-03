@@ -1,5 +1,6 @@
 #pragma once
 
+#include "cgi/cgi.hpp"
 #include "file.hpp"
 #include "result.hpp"
 #include "smart_pointers.hpp"
@@ -17,8 +18,6 @@ public:
     Result<File *, HttpStatus> route(std::string path);
 
 private:
-    typedef Result<File *, HttpStatus> (*Processor)(std::string path);
-
     std::string m_root;
-    std::map<std::string, Processor> m_processor;
+    std::map<std::string, CGI> m_cgis;
 };
