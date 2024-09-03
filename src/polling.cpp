@@ -1,27 +1,4 @@
-#include "file.hpp"
-#include "router.hpp"
-#include "smart_pointers.hpp"
-#include "status.hpp"
-#define MAX_EVENTS 5
-#define READ_SIZE 1024
-
-#include "../src/colors.hpp"
-
-#include "http/request.hpp"
-#include "http/response.hpp"
-#include <csignal>
-
-#include <cstdio>
-#include <errno.h>
-#include <netinet/in.h>
-#include <signal.h>
-#include <string.h>
-#include <sys/epoll.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <unistd.h>
-
-#include <iostream>
+#include "WebServ.hpp"
 
 int main()
 {
@@ -33,17 +10,15 @@ int main()
 
     Router router("www");
 
-    // Initialize epoll to efficiently manage multiple file descriptors for I/O
-    // events.
+    // Method created
     int epoll_fd = epoll_create1(0);
-    if (epoll_fd == -1)
+    if (epoll_fd == FAILURE)
     {
         std::cerr << NRED << strerror(errno) << RED << ": epoll_create1() failed." << RESET << std::endl;
-        return 1;
+        return FAILURE;
     }
 
-    // Create a socket for network communication using IPv4 and TCP.
-    // This socket will be used to listen for incoming connections.
+    // Method created
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd == -1)
     {
@@ -51,8 +26,7 @@ int main()
         return 1;
     }
 
-    // By doing this, we can use the same port after relaunching the web server.
-    // Without it, the port remains in use for a while.
+    // Method created
     int b = true;
     setsockopt(sockfd, SOL_SOCKET, SO_REUSEPORT, &b, sizeof(int));
 
@@ -125,9 +99,6 @@ int main()
                 std::cout << CYAN << "Reading file descriptor: " << events[i].data.fd << RESET << std::endl;
 
                 int bytes_read = recv(events[i].data.fd, read_buffer, READ_SIZE, 0);
-
-                // std::cout << "read_buffer = " << read_buffer << "\n";
-                // std::cout << "bytes_read = " << bytes_read << "\n";
 
                 req_str.append(read_buffer, bytes_read);
 
