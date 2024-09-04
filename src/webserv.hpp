@@ -10,7 +10,6 @@
 #include "file.hpp"
 #include "router.hpp"
 #include "smart_pointers.hpp"
-#include "status.hpp"
 
 #include "http/request.hpp"
 #include "http/response.hpp"
@@ -32,13 +31,13 @@ enum Status
     FAILURE = -1
 };
 
-class WebServ
+class Webserv
 {
 public:
-    WebServ();
-    WebServ(const WebServ& other);
-    WebServ& operator=(const WebServ& other);
-    ~WebServ();
+    Webserv();
+    Webserv(const Webserv& other);
+    Webserv& operator=(const Webserv& other);
+    ~Webserv();
 
     int getEpollFd() const;
     int getSockFd() const;

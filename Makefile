@@ -57,12 +57,12 @@ WHITE_BG		:= \033[48;5;15m
 
 SRCS 			:=	$(addprefix $(SRCS_PATH), \
 					polling.cpp \
-					status.cpp \
 					file.cpp \
 					router.cpp \
 					cgi/cgi.cpp \
 					http/request.cpp \
 					http/response.cpp \
+					http/status.cpp \
 )
 
 # ================================ OBJ FILES ================================= #

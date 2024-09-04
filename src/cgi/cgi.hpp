@@ -6,13 +6,16 @@
 #include <fcntl.h>
 #include <string>
 
+#include "http/status.hpp"
+#include "result.hpp"
+
 class CGI
 {
 public:
     CGI();
     CGI(std::string path);
 
-    std::string process(std::string filepath);
+    Result<std::string, HttpStatus> process(std::string filepath);
 
 private:
     /* The CGI to execute. */

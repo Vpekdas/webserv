@@ -1,22 +1,22 @@
-#include "WebServ.hpp"
+#include "webserv.hpp"
 
-WebServ::WebServ()
+Webserv::Webserv()
 {
     std::cout << YELLOW << "🛠️ Default WebServ Constructor called 🛠️" << RESET << std::endl;
 }
 
-WebServ::~WebServ()
+Webserv::~Webserv()
 {
     std::cout << RED << "🧨 WebServ Destructor called 🧨" << RESET << std::endl;
 }
 
-WebServ::WebServ(const WebServ& other)
+Webserv::Webserv(const Webserv& other)
 {
     (void)other;
     std::cout << YELLOW << "🖨️ WebServ Copy Constructor called 🖨️" << RESET << std::endl;
 }
 
-WebServ& WebServ::operator=(const WebServ& other)
+Webserv& Webserv::operator=(const Webserv& other)
 {
     // Check for self-assignment
     if (this != &other)
@@ -26,17 +26,17 @@ WebServ& WebServ::operator=(const WebServ& other)
     return *this;
 }
 
-int WebServ::getEpollFd() const
+int Webserv::getEpollFd() const
 {
     return m_epollFd;
 }
 
-int WebServ::getSockFd() const
+int Webserv::getSockFd() const
 {
     return m_sockFd;
 }
 
-int WebServ::initialize()
+int Webserv::initialize()
 {
     // Initialize epoll to efficiently manage multiple file descriptors for I/O
     // events.

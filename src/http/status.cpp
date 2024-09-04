@@ -33,8 +33,12 @@ std::ostream& operator<<(std::ostream& os, HttpStatus const& error)
     case 404:
         os << "Not found";
         break;
+    case 500:
+        os << "Internal server error";
+        break;
     default:
-        os << "";
+        os << "UNKNOWN"; // TODO: Unreachable
+        break;
     }
     return os;
 }

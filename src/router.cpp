@@ -2,9 +2,9 @@
 #include "cgi/cgi.hpp"
 #include "file.hpp"
 #include "http/request.hpp"
+#include "http/status.hpp"
 #include "result.hpp"
 #include "smart_pointers.hpp"
-#include "status.hpp"
 
 #include <sys/stat.h>
 #include <unistd.h>
@@ -42,7 +42,10 @@ Result<File *, HttpStatus> Router::route(std::string path)
 
     if (m_cgis.count(ext) > 0)
     {
-        std::string s = m_cgis[ext].process(full_path);
+        Result<std::string, HttpStatus> res = m_cgis[ext].process(full_path);
+        if (res.is_err())
+            return Err<File *>(res.unwrap_err());
+        std::string s = res.unwrap();
         s = s.substr(s.find(SEP SEP) + 2);
 
         file = new StringFile(s, File::mime_from_ext("html"));
