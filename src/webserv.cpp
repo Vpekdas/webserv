@@ -1,29 +1,11 @@
 #include "webserv.hpp"
+#include <cstring>
+#include <map>
+#include <netinet/in.h>
+#include <sys/epoll.h>
 
-Webserv::Webserv()
+Webserv::Webserv() : m_router("www")
 {
-    std::cout << YELLOW << "🛠️ Default WebServ Constructor called 🛠️" << RESET << std::endl;
-}
-
-Webserv::~Webserv()
-{
-    std::cout << RED << "🧨 WebServ Destructor called 🧨" << RESET << std::endl;
-}
-
-Webserv::Webserv(const Webserv& other)
-{
-    (void)other;
-    std::cout << YELLOW << "🖨️ WebServ Copy Constructor called 🖨️" << RESET << std::endl;
-}
-
-Webserv& Webserv::operator=(const Webserv& other)
-{
-    // Check for self-assignment
-    if (this != &other)
-    {
-    }
-    std::cout << YELLOW << "📞 WebServ Copy Assignment Operator called 📞" << RESET << std::endl;
-    return *this;
 }
 
 int Webserv::getEpollFd() const
@@ -65,5 +47,155 @@ int Webserv::initialize()
         return FAILURE;
     }
 
+    m_sockAddr.sin_family = AF_INET;
+    m_sockAddr.sin_addr.s_addr = INADDR_ANY;
+    m_sockAddr.sin_port = htons(9999);
+
+    // Ensure the server can accept incoming connections by binding the socket to
+    // the specified IP address and port. This step is crucial for the server to
+    // listen for and accept client requests on the designated network interface.
+    if (bind(m_sockFd, (struct sockaddr *)&m_sockAddr, sizeof(sockaddr)) == FAILURE)
+    {
+        std::cerr << NRED << strerror(errno) << RED << ": bind() failed." << RESET << std::endl;
+        return FAILURE;
+    }
+
+    // Prepare the socket to accept incoming connection requests by setting it to
+    // a listening state. This is essential for the server to handle multiple
+    // client connections concurrently.
+    if (listen(m_sockFd, 42) == FAILURE)
+    {
+        std::cerr << NRED << strerror(errno) << RED << ": listen() failed." << RESET << std::endl;
+        return FAILURE;
+    }
     return SUCCESS;
+}
+
+Result<Connection, int> Webserv::acceptConnection()
+{
+    socklen_t addrLen = sizeof(struct sockaddr_in);
+    struct sockaddr_in addr = {};
+
+    int conn = accept(m_sockFd, (struct sockaddr *)&addr, &addrLen);
+    if (conn == -1)
+    {
+        std::cerr << NRED << strerror(errno) << RED << ": accept() failed." << RESET << std::endl;
+        return -1;
+    }
+
+    struct epoll_event event;
+    event.events = EPOLLIN | EPOLLET;
+    event.data.fd = conn;
+
+    if (epoll_ctl(m_epollFd, EPOLL_CTL_ADD, conn, &event) == -1)
+    {
+        std::cerr << NRED << strerror(errno) << RED << ": epoll_ctl() failed." << RESET << std::endl;
+        close(m_epollFd);
+    }
+
+    return Connection(conn, addr, event);
+}
+
+void Webserv::eventLoop()
+{
+    char read_buffer[READ_SIZE];
+    std::string req_str;
+    int eventCount = 0;
+
+    struct epoll_event events[MAX_EVENTS];
+
+    struct epoll_event socket_event;
+    socket_event.events = EPOLLIN;
+    socket_event.data.fd = m_sockFd;
+
+    epoll_ctl(m_epollFd, EPOLL_CTL_ADD, m_sockFd, &socket_event);
+
+    while (1)
+    {
+        std::cout << YELLOW << "Polling for input..." << RESET << std::endl;
+
+        eventCount = epoll_wait(m_epollFd, events, MAX_EVENTS, -1);
+        std::cout << GREEN << eventCount << " ready events." << RESET << std::endl;
+        for (int i = 0; i < eventCount; i++)
+        {
+            if (events[i].data.fd == m_sockFd)
+            {
+                Connection conn = acceptConnection().unwrap();
+                (void)conn;
+                continue;
+            }
+
+            // Check if the current event indicates that there is data to read on the
+            // file descriptor.
+            // This is crucial for processing incoming data from the client, ensuring
+            // the server can handle read operations when data is available.
+            if ((events[i].events & EPOLLIN) == EPOLLIN)
+            {
+                std::cout << CYAN << "Reading file descriptor: " << events[i].data.fd << RESET << std::endl;
+
+                int n;
+
+                while ((n = recv(events[i].data.fd, read_buffer, READ_SIZE, 0)) > 0)
+                    req_str.append(read_buffer, n);
+
+                // Modify the event to monitor the file descriptor for outgoing data.
+                // This is necessary to prepare the server to send a response back to
+                // the client after reading the incoming data.
+                struct epoll_event event;
+                event.events = EPOLLOUT | EPOLLET;
+                event.data.fd = events[i].data.fd;
+
+                if (epoll_ctl(m_epollFd, EPOLL_CTL_MOD, events[i].data.fd, &event) == -1)
+                {
+                    std::cerr << NRED << strerror(errno) << RED << ": epoll_ctl() failed." << RESET << std::endl;
+                    close(events[i].data.fd);
+                    continue;
+                }
+            }
+
+            // Check if the current event indicates that the file descriptor is ready
+            // for writing. This is essential for sending data to the client, ensuring
+            // the server can handle write operations when the socket is ready.
+            else if ((events[i].events & EPOLLOUT) == EPOLLOUT)
+            {
+                Request req = Request::parse(req_str)
+                                  .unwrap(); // FIXME: `req_str` is empty and crash after a connection is closed
+                req_str.clear();
+                Result<File *, HttpStatus> res = m_router.route(req.path());
+
+                Response response;
+
+                if (res.is_err())
+                    response = Response::httpcat(res.unwrap_err());
+                else
+                    response = Response::ok(200, res.unwrap());
+
+                if (req.is_keep_alive())
+                    response.add_param("Connection", "keep-alive");
+                response.send(events[i].data.fd);
+
+                struct epoll_event event;
+                event.events = EPOLLIN | EPOLLET;
+                event.data.fd = events[i].data.fd;
+
+                if (!req.is_keep_alive() && req.is_closed())
+                {
+                    epoll_ctl(m_epollFd, EPOLL_CTL_DEL, events[i].data.fd, &events[i]);
+                    close(events[i].data.fd);
+                }
+                else
+                {
+                    if (epoll_ctl(m_epollFd, EPOLL_CTL_MOD, events[i].data.fd, &event) == -1)
+                    {
+                        std::cerr << NRED << strerror(errno) << RED << ": epoll_ctl() failed." << RESET << std::endl;
+                        close(events[i].data.fd);
+                        continue;
+                    }
+                }
+            }
+        }
+    }
+
+    close(m_epollFd);
+    close(m_sockFd);
 }

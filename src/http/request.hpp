@@ -28,6 +28,16 @@ public:
 
     std::string& get_param(std::string key);
 
+    bool is_keep_alive()
+    {
+        return m_params.count("Connection") > 0 && m_params["Connection"] == "keep-alive";
+    }
+
+    bool is_closed()
+    {
+        return m_params.count("Connection") > 0 && m_params["Connection"] == "closed";
+    }
+
     std::string& path()
     {
         return m_path;

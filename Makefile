@@ -56,7 +56,9 @@ WHITE_BG		:= \033[48;5;15m
 # ================================ SRC FILES ================================= #
 
 SRCS 			:=	$(addprefix $(SRCS_PATH), \
-					polling.cpp \
+					main.cpp \
+					webserv.cpp \
+					connection.cpp \
 					file.cpp \
 					router.cpp \
 					cgi/cgi.cpp \

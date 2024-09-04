@@ -7,14 +7,15 @@
 #include <iostream>
 #include <vector>
 
+#include "connection.hpp"
 #include "file.hpp"
 #include "router.hpp"
 #include "smart_pointers.hpp"
 
 #include "http/request.hpp"
 #include "http/response.hpp"
-#include <csignal>
 
+#include <csignal>
 #include <cstdio>
 #include <errno.h>
 #include <netinet/in.h>
@@ -31,23 +32,29 @@ enum Status
     FAILURE = -1
 };
 
+class Connection;
+
 class Webserv
 {
 public:
     Webserv();
-    Webserv(const Webserv& other);
-    Webserv& operator=(const Webserv& other);
-    ~Webserv();
 
     int getEpollFd() const;
     int getSockFd() const;
 
+    Result<Connection, int> acceptConnection();
+
     int initialize();
+    void eventLoop();
+
+    void setEventCount(int eventCount);
 
 protected:
 private:
     int m_epollFd;
     int m_sockFd;
-    std::vector<sockaddr_in> m_sockaddr;
-    struct epoll_event events[MAX_EVENTS];
+    std::vector<Connection> m_connections;
+    struct sockaddr_in m_sockAddr;
+
+    Router m_router;
 };
