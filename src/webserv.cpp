@@ -1,7 +1,14 @@
 #include "webserv.hpp"
+#include "colors.hpp"
+#include "http/request.hpp"
+#include "http/response.hpp"
+#include "logger.hpp"
+#include <cerrno>
 #include <cstring>
+#include <ios>
 #include <map>
 #include <netinet/in.h>
+#include <ostream>
 #include <sys/epoll.h>
 
 Webserv::Webserv() : m_router("www")
@@ -50,6 +57,8 @@ int Webserv::initialize()
     m_sockAddr.sin_family = AF_INET;
     m_sockAddr.sin_addr.s_addr = INADDR_ANY;
     m_sockAddr.sin_port = htons(9999);
+
+    ws::log << ws::info << "Listening on port " << ntohs(m_sockAddr.sin_port) << "\n";
 
     // Ensure the server can accept incoming connections by binding the socket to
     // the specified IP address and port. This step is crucial for the server to
@@ -110,10 +119,10 @@ void Webserv::eventLoop()
 
     while (1)
     {
-        std::cout << YELLOW << "Polling for input..." << RESET << std::endl;
+        // std::cout << YELLOW << "Polling for input..." << RESET << std::endl;
 
         eventCount = epoll_wait(m_epollFd, events, MAX_EVENTS, -1);
-        std::cout << GREEN << eventCount << " ready events." << RESET << std::endl;
+        // std::cout << GREEN << eventCount << " ready events." << RESET << std::endl;
 
         for (int i = 0; i < eventCount; i++)
         {
@@ -130,7 +139,7 @@ void Webserv::eventLoop()
             // the server can handle read operations when data is available.
             if ((events[i].events & EPOLLIN) == EPOLLIN)
             {
-                std::cout << CYAN << "Reading file descriptor: " << events[i].data.fd << RESET << std::endl;
+                // std::cout << CYAN << "Reading file descriptor: " << events[i].data.fd << RESET << std::endl;
 
                 int n;
                 char buf[READ_SIZE];
@@ -142,7 +151,7 @@ void Webserv::eventLoop()
                 req_str.append(buf, n);
 
                 if (n == -1)
-                    std::cerr << NRED << strerror(errno) << RED << ": recv() failed." << RESET << std::endl;
+                    ws::log << ws::err << "recv() failed: " << strerror(errno) << "\n";
 
                 // Modify the event to monitor the file descriptor for outgoing data.
                 // This is necessary to prepare the server to send a response back to
@@ -153,7 +162,7 @@ void Webserv::eventLoop()
 
                 if (epoll_ctl(m_epollFd, EPOLL_CTL_MOD, events[i].data.fd, &event) == -1)
                 {
-                    std::cerr << NRED << strerror(errno) << RED << ": epoll_ctl() failed." << RESET << std::endl;
+                    ws::log << ws::err << "epoll_ctrl() failed: " << strerror(errno) << "\n";
                     close(events[i].data.fd);
                 }
             }
@@ -168,7 +177,7 @@ void Webserv::eventLoop()
 
                 if (res2.is_err())
                 {
-                    std::cerr << NRED << "empty request from " << conn.fd() << RESET << "\n";
+                    ws::log << ws::err << "Empty request from connection " << conn.fd() << "\n";
                     close_connection(conn);
                     continue;
                 }
@@ -184,12 +193,15 @@ void Webserv::eventLoop()
                 else
                     response = Response::ok(200, res.unwrap());
 
-                std::cout << response.encode_header() << "\n";
-
                 if (req.is_keep_alive())
                     response.add_param("Connection", "keep-alive");
 
-                // response.add_param("X-Content-Type-Options", "nosniff");
+                if (!response.status().is_error())
+                    ws::log << ws::info << "GET `" << req.path() << "` -> " << NGREEN << response.status().code() << " "
+                            << response.status() << RESET << "\n";
+                else
+                    ws::log << ws::info << "GET `" << req.path() << "` -> " << NRED << response.status().code() << " "
+                            << response.status() << RESET << "\n";
 
                 response.send(events[i].data.fd);
 

@@ -22,6 +22,8 @@ public:
     void add_param(std::string key, std::string value);
     void send(int conn);
 
+    HttpStatus status();
+
     std::string encode_header();
 
 private:

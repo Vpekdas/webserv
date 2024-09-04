@@ -1,4 +1,5 @@
 #include "response.hpp"
+#include "colors.hpp"
 #include "file.hpp"
 #include "request.hpp"
 #include "smart_pointers.hpp"
@@ -52,12 +53,14 @@ Response Response::ok(HttpStatus status, SharedPtr<File> file)
     response.m_body = file;
 
     response.add_param("Content-Length", SSTR(file->file_size()));
-
-    std::cout << NRED << "name = `" << file->file_name() << "`, mime = " << file->mime() << "\n";
-
     response.add_param("Content-Type", file->mime());
 
     return response;
+}
+
+HttpStatus Response::status()
+{
+    return m_status;
 }
 
 std::string Response::encode_header()

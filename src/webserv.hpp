@@ -1,24 +1,12 @@
 #pragma once
 
-#include "../src/colors.hpp"
-#include <iostream>
-#include <vector>
-
 #include "connection.hpp"
-#include "file.hpp"
 #include "router.hpp"
-#include "smart_pointers.hpp"
-
-#include "http/request.hpp"
-#include "http/response.hpp"
 
 #include <csignal>
 #include <cstdio>
-#include <errno.h>
 #include <map>
 #include <netinet/in.h>
-#include <signal.h>
-#include <string.h>
 #include <sys/epoll.h>
 #include <sys/socket.h>
 #include <sys/types.h>
