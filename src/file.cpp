@@ -21,10 +21,12 @@ void File::_build_mime_table()
     mimes["html"] = "text/html";
     mimes["jpg"] = "image/jpeg";
     mimes["jpeg"] = "image/jpeg";
+    mimes["png"] = "image/jpeg";
     mimes["js"] = "text/javascript";
     mimes["json"] = "application/json";
     mimes["mp3"] = "audio/mpeg";
     mimes["mp4"] = "video/mp4";
+    mimes["png"] = "image/png";
     mimes["php"] = "application/x-httpd-php";
     mimes["text"] = "text/plain";
 }
@@ -40,6 +42,11 @@ std::string& File::mime_from_ext(std::string ext)
 
 StreamFile::StreamFile(std::string path) : m_path(path)
 {
+}
+
+std::string& StreamFile::file_name()
+{
+    return m_path;
 }
 
 bool StreamFile::exists()
@@ -58,7 +65,7 @@ size_t StreamFile::file_size()
 
 std::string StreamFile::mime()
 {
-    std::string ext = m_path.substr(m_path.find('.') + 1);
+    std::string ext = m_path.substr(m_path.rfind('.') + 1);
     return mimes[ext];
 }
 
@@ -94,8 +101,14 @@ void StreamFile::send(int conn)
     StringFile
  */
 
-StringFile::StringFile(std::string content, std::string mime) : m_mime(mime), m_content(content)
+StringFile::StringFile(std::string content, std::string mime)
+    : m_mime(mime), m_content(content), m_fake_name("IN MEMORY")
 {
+}
+
+std::string& StringFile::file_name()
+{
+    return m_fake_name;
 }
 
 bool StringFile::exists()

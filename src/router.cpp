@@ -17,7 +17,7 @@ Router::Router(std::string root) : m_root(root)
 Result<File *, HttpStatus> Router::route(std::string path)
 {
     std::string full_path = m_root + "/" + path;
-    std::string ext = full_path.substr(full_path.find('.') + 1);
+    std::string ext = full_path.substr(full_path.rfind('.') + 1);
 
     struct stat sb;
 

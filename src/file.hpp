@@ -14,6 +14,11 @@ public:
     }
 
     /*
+        Returns the file name.
+     */
+    virtual std::string& file_name() = 0;
+
+    /*
         Returns `true` if the file exists.
      */
     virtual bool exists() = 0;
@@ -45,6 +50,7 @@ class StreamFile : public File
 public:
     StreamFile(std::string path);
 
+    virtual std::string& file_name();
     virtual bool exists();
     virtual size_t file_size();
     virtual std::string mime();
@@ -59,6 +65,7 @@ class StringFile : public File
 public:
     StringFile(std::string source, std::string mime);
 
+    virtual std::string& file_name();
     virtual bool exists();
     virtual size_t file_size();
     virtual std::string mime();
@@ -67,4 +74,5 @@ public:
 private:
     std::string m_mime;
     std::string m_content;
+    std::string m_fake_name;
 };

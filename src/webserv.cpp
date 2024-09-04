@@ -189,6 +189,8 @@ void Webserv::eventLoop()
                 if (req.is_keep_alive())
                     response.add_param("Connection", "keep-alive");
 
+                // response.add_param("X-Content-Type-Options", "nosniff");
+
                 response.send(events[i].data.fd);
 
                 struct epoll_event event;
