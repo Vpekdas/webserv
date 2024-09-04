@@ -57,21 +57,26 @@ Response Response::ok(HttpStatus status, SharedPtr<File> file)
     return response;
 }
 
-void Response::send(int conn)
+std::string Response::encode_header()
 {
     std::stringstream r;
 
-    r << "HTTP/1.1 " << SSTR(m_status) << " " << m_status << SEP;
+    r << "HTTP/1.1 " << m_status.code() << " " << m_status << SEP;
 
     for (std::map<std::string, std::string>::iterator it = m_params.begin(); it != m_params.end(); it++)
         r << it->first << ": " << it->second << SEP;
 
     r << SEP;
 
-    std::string rstr = r.str();
+    return r.str();
+}
+
+void Response::send(int conn)
+{
+    std::string header = encode_header();
 
     // TODO: Check errors (including SIGPIPE)
-    ssize_t s = ::send(conn, rstr.c_str(), rstr.size(), 0);
+    ssize_t s = ::send(conn, header.c_str(), header.size(), 0);
     (void)s;
 
     m_body->send(conn);

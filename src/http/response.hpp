@@ -22,6 +22,8 @@ public:
     void add_param(std::string key, std::string value);
     void send(int conn);
 
+    std::string encode_header();
+
 private:
     HttpStatus m_status;
     SharedPtr<File> m_body;

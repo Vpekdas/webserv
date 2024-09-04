@@ -1,6 +1,7 @@
 #pragma once
 
 #include "result.hpp"
+#include "webserv.hpp"
 #include <map>
 #include <string>
 

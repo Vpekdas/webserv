@@ -7,16 +7,21 @@ Connection::Connection()
 }
 
 Connection::Connection(int conn, struct sockaddr_in addr, struct epoll_event event)
-    : m_addr(addr), m_connection(conn), m_event(event)
+    : m_addr(addr), m_fd(conn), m_event(event)
 {
 }
 
-socklen_t& Connection::getAddrLen()
+const socklen_t& Connection::getAddrLen() const
 {
     return m_addrLen;
 }
 
-int Connection::getConnection() const
+int Connection::fd() const
 {
-    return m_connection;
+    return m_fd;
+}
+
+std::string& Connection::getReqStr()
+{
+    return m_reqStr;
 }
