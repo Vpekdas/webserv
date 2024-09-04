@@ -1,21 +1,22 @@
 #pragma once
 
-/*
-    A simple CGI which communicates with `STDINT` and `STDOUT`.
- */
 #include <fcntl.h>
 #include <string>
 
+#include "http/request.hpp"
 #include "http/status.hpp"
 #include "result.hpp"
 
+/*
+    A simple CGI which communicates with `STDINT` and `STDOUT`.
+ */
 class CGI
 {
 public:
     CGI();
     CGI(std::string path);
 
-    Result<std::string, HttpStatus> process(std::string filepath);
+    Result<std::string, HttpStatus> process(std::string filepath, Request& req);
 
 private:
     /* The CGI to execute. */

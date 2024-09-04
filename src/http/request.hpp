@@ -1,7 +1,6 @@
 #pragma once
 
 #include "result.hpp"
-#include "webserv.hpp"
 #include <map>
 #include <string>
 
@@ -37,6 +36,16 @@ public:
     bool is_closed()
     {
         return m_params.count("Connection") > 0 && m_params["Connection"] == "closed";
+    }
+
+    std::string& cookies()
+    {
+        return get_param("Cookie");
+    }
+
+    std::string& user_agent()
+    {
+        return get_param("User-Agent");
     }
 
     std::string& path()

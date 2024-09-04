@@ -1,10 +1,10 @@
 #pragma once
 
 #include "cgi/cgi.hpp"
-#include "file.hpp"
-#include "result.hpp"
-#include "smart_pointers.hpp"
+#include "http/request.hpp"
+#include "http/response.hpp"
 #include "http/status.hpp"
+#include "result.hpp"
 #include <map>
 
 class Router
@@ -15,7 +15,7 @@ public:
     /*
         Take the path of the request and return the access to a file.
     */
-    Result<File *, HttpStatus> route(std::string path);
+    Result<Response, HttpStatus> route(Request& req);
 
 private:
     std::string m_root;

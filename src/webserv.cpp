@@ -184,14 +184,14 @@ void Webserv::eventLoop()
 
                 Request req = res2.unwrap(); // FIXME: `req_str` is empty and crash after a connection is closed
                 conn.getReqStr().clear();
-                Result<File *, HttpStatus> res = m_router.route(req.path());
+                Result<Response, HttpStatus> res = m_router.route(req);
 
                 Response response;
 
                 if (res.is_err())
                     response = Response::httpcat(res.unwrap_err());
                 else
-                    response = Response::ok(200, res.unwrap());
+                    response = res.unwrap();
 
                 if (req.is_keep_alive())
                     response.add_param("Connection", "keep-alive");

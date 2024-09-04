@@ -2,9 +2,9 @@
 #include "cgi/cgi.hpp"
 #include "file.hpp"
 #include "http/request.hpp"
+#include "http/response.hpp"
 #include "http/status.hpp"
 #include "result.hpp"
-#include "smart_pointers.hpp"
 
 #include <sys/stat.h>
 #include <unistd.h>
@@ -14,9 +14,9 @@ Router::Router(std::string root) : m_root(root)
     m_cgis["php"] = CGI("/usr/bin/php-cgi");
 }
 
-Result<File *, HttpStatus> Router::route(std::string path)
+Result<Response, HttpStatus> Router::route(Request& req)
 {
-    std::string full_path = m_root + "/" + path;
+    std::string full_path = m_root + "/" + req.path();
     std::string ext = full_path.substr(full_path.rfind('.') + 1);
 
     struct stat sb;
@@ -36,24 +36,24 @@ Result<File *, HttpStatus> Router::route(std::string path)
     // Either go through a CGI or send the file.
 
     if (access(full_path.c_str(), F_OK | R_OK) == -1)
-        return Err<File *, HttpStatus>(404);
+        return Err<Response, HttpStatus>(404);
 
-    File *file = NULL;
+    Response response;
 
     if (m_cgis.count(ext) > 0)
     {
-        Result<std::string, HttpStatus> res = m_cgis[ext].process(full_path);
+        Result<std::string, HttpStatus> res = m_cgis[ext].process(full_path, req);
         if (res.is_err())
-            return Err<File *>(res.unwrap_err());
-        std::string s = res.unwrap();
-        s = s.substr(s.find(SEP SEP) + 2);
+            return Err<Response, HttpStatus>(res.unwrap_err());
 
-        file = new StringFile(s, File::mime_from_ext("html"));
+        return Response::from_cgi(200, res.unwrap());
     }
     else
     {
-        file = new StreamFile(full_path);
+        File *file = new StreamFile(full_path);
+        if (file->exists())
+            return Response::ok(200, file);
+        else
+            return HttpStatus(404);
     }
-
-    return Ok<File *, HttpStatus>(file);
 }

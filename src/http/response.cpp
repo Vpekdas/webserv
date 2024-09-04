@@ -1,11 +1,13 @@
-#include "response.hpp"
-#include "colors.hpp"
-#include "file.hpp"
-#include "request.hpp"
-#include "smart_pointers.hpp"
 #include <sstream>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <vector>
+
+#include "file.hpp"
+#include "request.hpp"
+#include "response.hpp"
+#include "smart_pointers.hpp"
+#include "string.hpp"
 
 // clang-format off
 static std::string source =
@@ -47,13 +49,43 @@ Response::Response(HttpStatus status) : m_status(status)
     (void)m_body;
 }
 
-Response Response::ok(HttpStatus status, SharedPtr<File> file)
+Response Response::ok(HttpStatus status, File *file)
 {
     Response response(status);
     response.m_body = file;
 
-    response.add_param("Content-Length", SSTR(file->file_size()));
+    response.add_param("Content-Length", to_string(file->file_size()));
     response.add_param("Content-Type", file->mime());
+
+    return response;
+}
+
+Response Response::from_cgi(HttpStatus status, std::string str)
+{
+    Response response;
+    response.m_status = status;
+
+    size_t pos = str.find(SEP SEP);
+    std::string header = str.substr(0, pos);
+    std::string body = str.substr(pos + 2);
+    std::vector<std::string> lines = split(header, SEP);
+
+    // if (lines.size() == 0)
+    //     return Err<Request, int>(0);
+
+    std::vector<std::string> request_line = split(lines[0], " ");
+
+    for (size_t i = 0; i < lines.size(); i++)
+    {
+        size_t comma = lines[i].find(":");
+        std::string key = lines[i].substr(0, comma);
+        std::string value = trim(lines[i].substr(comma + 1));
+
+        response.m_params[key] = value;
+    }
+
+    response.m_body = new StringFile(body, "text/html");
+    response.add_param("Content-Length", to_string(response.m_body->file_size()));
 
     return response;
 }
@@ -106,11 +138,11 @@ Response Response::httpcat(HttpStatus status)
     Response response(status);
     std::string content = source;
 
-    _replace_all(content, "%{error}", SSTR(status.code()));
-    response.m_body = make_shared<File>(new StringFile(content, "text/html"));
+    _replace_all(content, "%{error}", to_string(status.code()));
+    response.m_body = new StringFile(content, "text/html");
 
     response.add_param("Content-Type", "text/html");
-    response.add_param("Content-Length", SSTR(response.m_body->file_size()));
+    response.add_param("Content-Length", to_string(response.m_body->file_size()));
 
     return response;
 }

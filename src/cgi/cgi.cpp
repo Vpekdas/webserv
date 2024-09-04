@@ -1,7 +1,9 @@
 #include "cgi.hpp"
+#include "http/request.hpp"
 #include "result.hpp"
 
 #include <cstdlib>
+#include <iostream>
 #include <sys/wait.h>
 #include <unistd.h>
 
@@ -15,7 +17,7 @@ CGI::CGI(std::string path) : m_path(path), m_pid(-1)
 
 // https://stackoverflow.com/questions/7047426/call-php-from-virtual-custom-web-server
 
-Result<std::string, HttpStatus> CGI::process(std::string filepath)
+Result<std::string, HttpStatus> CGI::process(std::string filepath, Request& req)
 {
     if (pipe(m_pipefds) == -1)
         return Err<std::string, HttpStatus>(500);
@@ -37,16 +39,23 @@ Result<std::string, HttpStatus> CGI::process(std::string filepath)
             exit(1);
         }
 
-        std::string filepath_env = "SCRIPT_FILENAME=" + filepath;
+        std::string script_filename = "SCRIPT_FILENAME=" + filepath;
 
-        const char *argv[] = {NULL};
         // clang-format off
+        const char *argv[] = {m_path.c_str(), NULL};
+
+        // http://www.cgi101.com/book/ch3/text.html
+        std::string http_cookie = "HTTP_COOKIE=" + req.cookies();
+        std::string http_user_agent = "HTTP_USER_AGENT=" + req.user_agent();
+
         const char *envp[] = {
             "GATEWAY_INTERFACE=GCI/1.1",
-            filepath_env.c_str(),
+            script_filename.c_str(),
             "QUERY_STRING=\"\"",
             "REQUEST_METHOD=\"GET\"",
             "REDIRECT_STATUS=200",
+            http_cookie.c_str(),
+            http_user_agent.c_str(),
             NULL
         };
         // clang-format on
