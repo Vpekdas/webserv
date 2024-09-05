@@ -19,7 +19,7 @@ public:
 
     virtual Result<int, ConfigError> deserialize(ConfigEntry& from);
 
-    std::vector<Method> methods()
+    std::vector<Method>& methods()
     {
         return m_methods;
     }
@@ -66,12 +66,12 @@ private:
     std::string m_upload_directory;
 };
 
-class Server
+class ServerConfig
 {
 public:
-    Server();
+    ServerConfig();
 
-    virtual ~Server()
+    virtual ~ServerConfig()
     {
     }
 
@@ -97,6 +97,11 @@ public:
         return m_max_content_length;
     }
 
+    std::vector<Location>& locations()
+    {
+        return m_locations;
+    }
+
 private:
     std::string m_server_name;
     struct sockaddr_in m_listen_addr;
@@ -120,11 +125,11 @@ public:
     Result<int, ConfigError> load_from_file(std::string filepath);
     virtual Result<int, ConfigError> deserialize(ConfigEntry& from);
 
-    std::vector<Server> servers()
+    std::vector<ServerConfig> servers()
     {
         return m_servers;
     }
 
 private:
-    std::vector<Server> m_servers;
+    std::vector<ServerConfig> m_servers;
 };

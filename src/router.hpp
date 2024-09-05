@@ -1,6 +1,7 @@
 #pragma once
 
 #include "cgi/cgi.hpp"
+#include "config/config.hpp"
 #include "http/request.hpp"
 #include "http/response.hpp"
 #include "http/status.hpp"
@@ -10,7 +11,11 @@
 class Router
 {
 public:
-    Router(std::string root);
+    Router()
+    {
+    }
+
+    Router(ServerConfig config);
 
     /*
         Take the path of the request and return the access to a file.
@@ -18,6 +23,8 @@ public:
     Result<Response, HttpStatus> route(Request& req);
 
 private:
-    std::string m_root;
     std::map<std::string, CGI> m_cgis;
+    ServerConfig m_config;
+
+    Result<Response, HttpStatus> _route_with_location(Request& req, Location& loc);
 };

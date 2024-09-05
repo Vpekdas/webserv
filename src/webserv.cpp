@@ -15,7 +15,7 @@
 #include <sys/epoll.h>
 #include <unistd.h>
 
-Webserv::Webserv() : m_router("www")
+Webserv::Webserv()
 {
 }
 
@@ -44,6 +44,10 @@ int Webserv::initialize(std::string config_path)
         res.unwrap_err().print(ws::log);
         return 1;
     }
+
+    m_router = Router(m_config.servers()[0]);
+
+    m_router = Router(m_config.servers()[0]);
 
     m_epollFd = epoll_create1(0);
     if (m_epollFd == -1)
