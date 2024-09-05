@@ -1,5 +1,6 @@
 #include "webserv.hpp"
 #include "colors.hpp"
+#include "config/parser.hpp"
 #include "connection.hpp"
 #include "http/request.hpp"
 #include "http/response.hpp"
@@ -10,7 +11,9 @@
 #include <map>
 #include <netinet/in.h>
 #include <ostream>
+#include <string>
 #include <sys/epoll.h>
+#include <unistd.h>
 
 Webserv::Webserv() : m_router("portfolio/dist")
 {
@@ -26,14 +29,28 @@ int Webserv::getSockFd() const
     return m_sockFd;
 }
 
-int Webserv::initialize()
+int Webserv::initialize(std::string config_path)
 {
+    if (access(config_path.c_str(), F_OK | R_OK) == -1)
+    {
+        ws::log << ws::err << "Invalid config file `" << config_path << "`: " << strerror(errno) << "\n";
+        return 1;
+    }
+
+    Result<int, ConfigError> res = m_config.load_from_file(config_path);
+    if (res.is_err())
+    {
+        ws::log << ws::err << "Configuration error:\n";
+        res.unwrap_err().print(ws::log);
+        return 1;
+    }
+
     // Initialize epoll to efficiently manage multiple file descriptors for I/O
     // events.
     m_epollFd = epoll_create1(0);
     if (m_epollFd == -1)
     {
-        std::cerr << NRED << strerror(errno) << RED << ": epoll_create1() failed." << RESET << std::endl;
+        ws::log << ws::err << ": epoll_create1() failed: " << strerror(errno) << RESET << "\n";
         return FAILURE;
     }
 
@@ -42,7 +59,7 @@ int Webserv::initialize()
     m_sockFd = socket(AF_INET, SOCK_STREAM, 0);
     if (m_sockFd == -1)
     {
-        std::cerr << NRED << strerror(errno) << RED << ": socket() failed." << RESET << std::endl;
+        ws::log << ws::err << RED << ": socket() failed: " << strerror(errno) << RESET << "\n";
         return FAILURE;
     }
 

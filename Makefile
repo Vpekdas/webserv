@@ -63,6 +63,8 @@ SRCS 			:=	$(addprefix $(SRCS_PATH), \
 					router.cpp \
 					logger.cpp \
 					cgi/cgi.cpp \
+					config/config.cpp \
+					config/parser.cpp \
 					http/request.cpp \
 					http/response.cpp \
 					http/status.cpp \
@@ -162,6 +164,7 @@ $(OBJS_PATH)%.o: $(SRCS_PATH)%.cpp
 	@mkdir -p $(OBJS_PATH)
 	@mkdir -p $(OBJS_PATH)/http
 	@mkdir -p $(OBJS_PATH)/cgi
+	@mkdir -p $(OBJS_PATH)/config
 #	TODO: @mkdir -p $(OBJS_PATH)/sub directory name
 	@$(CXX) $(CXXFLAGS) $(DEPFLAGS) -c $< -o $@
 	@$(eval FILE_COUNT=$(shell echo $$(($(FILE_COUNT)+1))))
