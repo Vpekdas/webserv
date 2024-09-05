@@ -53,6 +53,11 @@ public:
         return m_path;
     }
 
+    Method method()
+    {
+        return m_method;
+    }
+
 private:
     Method m_method;
     std::string m_path;

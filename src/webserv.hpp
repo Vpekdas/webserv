@@ -12,7 +12,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#define MAX_EVENTS 5
+#define MAX_EVENTS 128
 #define READ_SIZE 512
 
 enum Status

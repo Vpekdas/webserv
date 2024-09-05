@@ -1,5 +1,7 @@
 #include "file.hpp"
+#include "colors.hpp"
 #include <fcntl.h>
+#include <iostream>
 #include <map>
 #include <string>
 #include <sys/socket.h>
@@ -85,16 +87,9 @@ void StreamFile::send(int conn)
     ssize_t n;
 
     while ((n = read(fd, buf, FILE_BUFFER_SIZE)) > 0)
-    {
         ::send(conn, buf, n, 0);
-    }
 
     close(fd);
-
-    // TODO:
-    // If there is an error.
-    if (n == -1)
-        return;
 }
 
 /*

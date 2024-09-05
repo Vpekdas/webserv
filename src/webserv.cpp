@@ -1,5 +1,6 @@
 #include "webserv.hpp"
 #include "colors.hpp"
+#include "connection.hpp"
 #include "http/request.hpp"
 #include "http/response.hpp"
 #include "logger.hpp"
@@ -11,7 +12,7 @@
 #include <ostream>
 #include <sys/epoll.h>
 
-Webserv::Webserv() : m_router("www")
+Webserv::Webserv() : m_router("portfolio/dist")
 {
 }
 
@@ -93,7 +94,7 @@ Result<Connection, int> Webserv::acceptConnection()
     }
 
     struct epoll_event event;
-    event.events = EPOLLIN | EPOLLET;
+    event.events = EPOLLIN | EPOLLRDHUP;
     event.data.fd = conn;
 
     if (epoll_ctl(m_epollFd, EPOLL_CTL_ADD, conn, &event) == -1)
@@ -119,17 +120,22 @@ void Webserv::eventLoop()
 
     while (1)
     {
-        // std::cout << YELLOW << "Polling for input..." << RESET << std::endl;
-
         eventCount = epoll_wait(m_epollFd, events, MAX_EVENTS, -1);
-        // std::cout << GREEN << eventCount << " ready events." << RESET << std::endl;
-
         for (int i = 0; i < eventCount; i++)
         {
             if (events[i].data.fd == m_sockFd)
             {
                 Connection conn = acceptConnection().unwrap();
+                if (m_connections.count(conn.fd()) > 0)
+                    ws::log << ws::dbg << "Connection " << conn.fd() << " already in map\n";
                 m_connections[conn.fd()] = conn;
+                continue;
+            }
+
+            if ((events[i].events & EPOLLRDHUP) == EPOLLRDHUP)
+            {
+                Connection& conn = m_connections[events[i].data.fd];
+                close_connection(conn);
                 continue;
             }
 
@@ -137,7 +143,7 @@ void Webserv::eventLoop()
             // file descriptor.
             // This is crucial for processing incoming data from the client, ensuring
             // the server can handle read operations when data is available.
-            if ((events[i].events & EPOLLIN) == EPOLLIN)
+            else if ((events[i].events & EPOLLIN) == EPOLLIN)
             {
                 // std::cout << CYAN << "Reading file descriptor: " << events[i].data.fd << RESET << std::endl;
 
@@ -148,27 +154,30 @@ void Webserv::eventLoop()
                 std::string& req_str = conn.getReqStr();
 
                 n = recv(events[i].data.fd, buf, READ_SIZE, 0);
-                req_str.append(buf, n);
 
                 if (n == -1)
-                    ws::log << ws::err << "recv() failed: " << strerror(errno) << "\n";
-
-                // Modify the event to monitor the file descriptor for outgoing data.
-                // This is necessary to prepare the server to send a response back to
-                // the client after reading the incoming data.
-                struct epoll_event event;
-                event.events = EPOLLOUT | EPOLLET;
-                event.data.fd = events[i].data.fd;
-
-                if (epoll_ctl(m_epollFd, EPOLL_CTL_MOD, events[i].data.fd, &event) == -1)
                 {
-                    ws::log << ws::err << "epoll_ctrl() failed: " << strerror(errno) << "\n";
-                    close(events[i].data.fd);
+                    ws::log << ws::err << "recv() failed: " << strerror(errno) << "\n";
+                    close_connection(conn);
+                    continue;
+                }
+                req_str.append(buf, n);
+
+                if (n < READ_SIZE)
+                {
+                    struct epoll_event event;
+                    event.events = EPOLLOUT | EPOLLRDHUP;
+                    event.data.fd = events[i].data.fd;
+
+                    if (epoll_ctl(m_epollFd, EPOLL_CTL_MOD, events[i].data.fd, &event) == -1)
+                    {
+                        ws::log << ws::err << "epoll_ctrl() failed: " << strerror(errno) << "\n";
+                        close(events[i].data.fd);
+                        continue;
+                    }
                 }
             }
-            // Check if the current event indicates that the file descriptor is ready
-            // for writing. This is essential for sending data to the client, ensuring
-            // the server can handle write operations when the socket is ready.
+
             else if ((events[i].events & EPOLLOUT) == EPOLLOUT)
             {
                 Connection& conn = m_connections[events[i].data.fd];
@@ -197,17 +206,25 @@ void Webserv::eventLoop()
                     response.add_param("Connection", "keep-alive");
 
                 if (!response.status().is_error())
+                {
                     ws::log << ws::info << "GET `" << req.path() << "` -> " << NGREEN << response.status().code() << " "
                             << response.status() << RESET << "\n";
+                }
                 else
                     ws::log << ws::info << "GET `" << req.path() << "` -> " << NRED << response.status().code() << " "
                             << response.status() << RESET << "\n";
-
                 response.send(events[i].data.fd);
 
                 struct epoll_event event;
-                event.events = EPOLLIN | EPOLLET;
+                event.events = EPOLLIN | EPOLLRDHUP;
                 event.data.fd = events[i].data.fd;
+
+                if (epoll_ctl(m_epollFd, EPOLL_CTL_MOD, events[i].data.fd, &event) == -1)
+                {
+                    ws::log << ws::err << "epoll_ctrl(EPOLL_CTL_MOD) failed: " << strerror(errno) << "\n";
+                    close(events[i].data.fd);
+                    continue;
+                }
 
                 // Close the connection if the client either close the connection or don't want to keep
                 // it alive.
@@ -225,7 +242,7 @@ void Webserv::eventLoop()
 void Webserv::close_connection(Connection& conn)
 {
     if (epoll_ctl(m_epollFd, EPOLL_CTL_DEL, conn.fd(), NULL) == -1)
-        std::cerr << NRED << strerror(errno) << RED << ": epoll_ctl() failed." << RESET << std::endl;
+        ws::log << ws::err << "epoll_ctl(EPOLL_CTL_DEL) failed: " << strerror(errno) << "\n";
     close(conn.fd());
     m_connections.erase(m_connections.find(conn.fd()));
 }
@@ -233,7 +250,7 @@ void Webserv::close_connection(Connection& conn)
 void Webserv::keep_alive(Connection& conn)
 {
     struct epoll_event event;
-    event.events = EPOLLIN | EPOLLET;
+    event.events = EPOLLIN | EPOLLRDHUP;
     event.data.fd = conn.fd();
 
     if (epoll_ctl(m_epollFd, EPOLL_CTL_MOD, conn.fd(), &event) == -1)
