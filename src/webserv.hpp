@@ -4,10 +4,21 @@
 #include "connection.hpp"
 #include "router.hpp"
 
+#include "colors.hpp"
+#include "config/parser.hpp"
+#include "connection.hpp"
+#include "http/request.hpp"
+#include "http/response.hpp"
+#include "logger.hpp"
+#include <cerrno>
 #include <csignal>
 #include <cstdio>
+#include <cstring>
+#include <ios>
 #include <map>
 #include <netinet/in.h>
+#include <ostream>
+#include <string>
 #include <sys/epoll.h>
 #include <sys/socket.h>
 #include <sys/types.h>

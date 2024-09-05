@@ -125,7 +125,7 @@ public:
     Result<int, ConfigError> load_from_file(std::string filepath);
     virtual Result<int, ConfigError> deserialize(ConfigEntry& from);
 
-    std::vector<ServerConfig> servers()
+    std::vector<ServerConfig>& servers()
     {
         return m_servers;
     }

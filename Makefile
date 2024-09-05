@@ -59,6 +59,7 @@ SRCS 			:=	$(addprefix $(SRCS_PATH), \
 					main.cpp \
 					webserv.cpp \
 					connection.cpp \
+					server.cpp \
 					file.cpp \
 					router.cpp \
 					logger.cpp \

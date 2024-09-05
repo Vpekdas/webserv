@@ -1,19 +1,6 @@
 #include "webserv.hpp"
-#include "colors.hpp"
-#include "config/parser.hpp"
-#include "connection.hpp"
-#include "http/request.hpp"
-#include "http/response.hpp"
-#include "logger.hpp"
-#include <cerrno>
-#include <cstring>
-#include <ios>
-#include <map>
-#include <netinet/in.h>
-#include <ostream>
-#include <string>
-#include <sys/epoll.h>
-#include <unistd.h>
+#include "config/config.hpp"
+#include "server.hpp"
 
 Webserv::Webserv()
 {
@@ -34,7 +21,7 @@ int Webserv::initialize(std::string config_path)
     if (access(config_path.c_str(), F_OK | R_OK) == -1)
     {
         ws::log << ws::err << "Invalid config file `" << config_path << "`: " << strerror(errno) << "\n";
-        return 1;
+        return FAILURE;
     }
 
     Result<int, ConfigError> res = m_config.load_from_file(config_path);
@@ -42,10 +29,8 @@ int Webserv::initialize(std::string config_path)
     {
         ws::log << ws::err << "Configuration error:\n";
         res.unwrap_err().print(ws::log);
-        return 1;
+        return FAILURE;
     }
-
-    m_router = Router(m_config.servers()[0]);
 
     m_router = Router(m_config.servers()[0]);
 
@@ -88,6 +73,7 @@ int Webserv::initialize(std::string config_path)
         std::cerr << NRED << strerror(errno) << RED << ": listen() failed." << RESET << std::endl;
         return FAILURE;
     }
+
     return SUCCESS;
 }
 
