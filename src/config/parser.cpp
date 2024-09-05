@@ -1,4 +1,4 @@
-#include "config/config.hpp"
+#include "config/parser.hpp"
 #include "option.hpp"
 #include "result.hpp"
 #include <cstdlib>
@@ -7,36 +7,36 @@
 #include <iostream>
 #include <ostream>
 
-Config::Config()
-{
-}
+// Config::Config()
+// {
+// }
 
-void Config::load_from_file(std::string filename)
-{
-    ConfigParser parser;
-    Result<int, ConfigError> result = parser.parse(filename);
-    if (result.is_err())
-        result.unwrap_err().print(std::cerr);
+// void Config::load_from_file(std::string filename)
+// {
+//     ConfigParser parser;
+//     Result<int, ConfigError> result = parser.parse(filename);
+//     if (result.is_err())
+//         result.unwrap_err().print(std::cerr);
 
-    for (size_t i = 0; i < parser.root().children().size(); i++)
-    {
-        ConfigEntry& entry = parser.root().children()[i];
+//     for (size_t i = 0; i < parser.root().children().size(); i++)
+//     {
+//         ConfigEntry& entry = parser.root().children()[i];
 
-        if (entry.args()[0].content() == "Routes")
-        {
-            Result<int, ConfigError> result = m_routes.deserialize(entry);
-            if (result.is_err())
-                result.unwrap_err().print(std::cerr);
-        }
-        else
-        {
-            std::vector<std::string> entries;
-            entries.push_back("Routes");
-            ConfigError::unknown_entry(entry.source(), entry.args()[0], entries).print(std::cerr);
-            break;
-        }
-    }
-}
+//         if (entry.args()[0].content() == "Routes")
+//         {
+//             Result<int, ConfigError> result = m_routes.deserialize(entry);
+//             if (result.is_err())
+//                 result.unwrap_err().print(std::cerr);
+//         }
+//         else
+//         {
+//             std::vector<std::string> entries;
+//             entries.push_back("Routes");
+//             ConfigError::unknown_entry(entry.source(), entry.args()[0], entries).print(std::cerr);
+//             break;
+//         }
+//     }
+// }
 
 /*
     Parsing
@@ -120,7 +120,7 @@ std::string Token::str() const
     return m_str;
 }
 
-int Token::get_int() const
+int Token::number() const
 {
     return m_int;
 }
@@ -240,8 +240,8 @@ ConfigParser::~ConfigParser()
 
 // This will only parse one entry of the file until there is no more entries between `start` and `end`.
 // `index` is a cursor which will be updated for each call.
-static Option<Result<ConfigEntry, ConfigError>> _parse(std::string& source, std::vector<Token>& tokens, size_t *start,
-                                                       size_t *end, size_t *index)
+static Option<Result<ConfigEntry, ConfigError> > _parse(std::string& source, std::vector<Token>& tokens, size_t *start,
+                                                        size_t *end, size_t *index)
 {
     // Two possibles possible entries:
     // 1. An inline entry ended by a line return
@@ -257,7 +257,7 @@ static Option<Result<ConfigEntry, ConfigError>> _parse(std::string& source, std:
     }
 
     if (i >= *end)
-        return None<Result<ConfigEntry, ConfigError>>();
+        return None<Result<ConfigEntry, ConfigError> >();
 
     for (; i < *end && (tokens[i].type() != TOKEN_LINE_BREAK && tokens[i].type() != TOKEN_LEFT_CURLY); i++)
     {
@@ -318,7 +318,7 @@ static Option<Result<ConfigEntry, ConfigError>> _parse(std::string& source, std:
 
     size_t new_end = i;
     size_t new_index = new_start;
-    Option<Result<ConfigEntry, ConfigError>> maybe_entry;
+    Option<Result<ConfigEntry, ConfigError> > maybe_entry;
 
     while ((maybe_entry = _parse(source, tokens, &new_start, &new_end, &new_index)).is_some())
     {
@@ -347,7 +347,7 @@ Result<int, ConfigError> ConfigParser::parse(std::string filename)
     size_t start = 0;
     size_t end = tokens.size();
     size_t index = start;
-    Option<Result<ConfigEntry, ConfigError>> maybe_entry;
+    Option<Result<ConfigEntry, ConfigError> > maybe_entry;
 
     while ((maybe_entry = _parse(content, tokens, &start, &end, &index)).is_some())
     {
@@ -521,7 +521,7 @@ ConfigError ConfigError::unknown_entry(std::string source, Token tok, std::vecto
     return err;
 }
 
-static std::string _spaces(size_t n)
+std::string ConfigError::_spaces(size_t n)
 {
     std::string s;
 
@@ -530,21 +530,6 @@ static std::string _spaces(size_t n)
     for (size_t i = 0; i < n; i++)
         s += " ";
     return s;
-}
-
-void ConfigError::print(std::ostream& os)
-{
-    _print_lines(os, m_token.line() - 2, 3);
-
-    os << "     ";
-    os << _spaces(m_token.column()) << "^";
-
-    for (int i = 0; i < m_token.width() - 1; i++)
-        os << "~";
-
-    os << "\n";
-    os << "     " << _spaces(m_token.column()) << "|\n";
-    os << "     " << _spaces(m_token.column()) << "+----- " << _strerror() << "\n";
 }
 
 std::string ConfigError::_strerror()
@@ -604,102 +589,4 @@ std::string ConfigError::_strtok(TokenType type)
     case TOKEN_EOF:
         return "End of file";
     }
-}
-
-static std::vector<std::string> _split(std::string& s, std::string delimiter)
-{
-    size_t pos_start = 0, pos_end, delim_len = delimiter.length();
-    std::string token;
-    std::vector<std::string> res;
-
-    while ((pos_end = s.find(delimiter, pos_start)) != std::string::npos)
-    {
-        token = s.substr(pos_start, pos_end - pos_start);
-        pos_start = pos_end + delim_len;
-        res.push_back(token);
-    }
-
-    res.push_back(s.substr(pos_start));
-    return res;
-}
-
-void ConfigError::_print_lines(std::ostream& os, int first_line, size_t num)
-{
-    std::vector<std::string> lines = _split(m_source, "\n");
-    if (first_line < 0)
-        first_line = 0;
-    for (size_t i = first_line; i < first_line + num && i < lines.size(); i++)
-        os << std::setw(2) << (i + 1) << " | " << lines[i] << "\n";
-}
-
-/*
-    Deserialization
- */
-
-static Result<int, ConfigError> _expect(ConfigEntry& entry, Usage& usage)
-{
-    // TODO:
-    // Accept multiple usages!
-
-    if (!entry.is_inline())
-        return Err<int, ConfigError>(ConfigError::not_inline(entry.source(), entry.args()[0]));
-    else if (entry.args().size() - 1 != usage.args().size())
-        return Err<int, ConfigError>(
-            ConfigError::mismatch_entry(entry.source(), entry.args()[0], usage.name(), usage.args()));
-    else if (entry.args()[0].type() != TOKEN_IDENTIFIER || entry.args()[0].content() != usage.name())
-        return Err<int, ConfigError>(
-            ConfigError::mismatch_entry(entry.source(), entry.args()[0], usage.name(), usage.args()));
-
-    for (size_t i = 1; i < usage.args().size(); i++)
-    {
-        Token& lhs = entry.args()[i];
-        Arg& rhs = usage.args()[i];
-
-        if (lhs.type() != rhs.type())
-            return Err<int, ConfigError>(
-                ConfigError::mismatch_entry(entry.source(), entry.args()[0], usage.name(), usage.args()));
-
-        if (rhs.type() == TOKEN_STRING)
-        {
-            *rhs.ptr<std::string>() = lhs.content();
-        }
-        else if (rhs.type() == TOKEN_NUMBER)
-        {
-            *rhs.ptr<int>() = lhs.get_int();
-        }
-    }
-
-    return Ok<int, ConfigError>(0);
-}
-
-static Result<int, ConfigError> _expect_multiple(ConfigEntry& entry, std::vector<Usage>& usages)
-{
-    for (size_t i = 0; i < usages.size(); i++)
-    {
-        Result<int, ConfigError> result = _expect(entry, usages[i]);
-        EXPECT_OK_AND(int, ConfigError, (entry.args()[0].content() == usages[i].name()), result);
-        if (result.is_ok())
-            return Ok<int, ConfigError>(0);
-    }
-
-    std::vector<std::string> entries;
-    entries.reserve(usages.size());
-
-    for (size_t i = 0; i < usages.size(); i++)
-        entries.push_back(usages[i].name());
-
-    return Err<int, ConfigError>(ConfigError::unknown_entry(entry.source(), entry.args()[0], entries));
-}
-
-template <typename T> static std::vector<T> _array_to_vec(T array[], size_t size)
-{
-    std::vector<T> vec;
-
-    vec.reserve(size);
-    for (size_t i = 0; i < size; i++)
-    {
-        vec.push_back(array[i]);
-    }
-
-    return vec;
 }

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "config/config.hpp"
 #include "connection.hpp"
 #include "router.hpp"
 
@@ -31,7 +32,7 @@ public:
 
     Result<Connection, int> acceptConnection();
 
-    int initialize();
+    int initialize(std::string config_path);
     void eventLoop();
 
     void setEventCount(int eventCount);
@@ -45,5 +46,6 @@ private:
     std::map<int, Connection> m_connections;
     struct sockaddr_in m_sockAddr;
 
+    Config m_config;
     Router m_router;
 };

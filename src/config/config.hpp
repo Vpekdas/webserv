@@ -1,272 +1,129 @@
 #pragma once
 
+#include <map>
+#include <netinet/in.h>
 #include <string>
 #include <vector>
 
-#include "result.hpp"
+#include "config/parser.hpp"
+#include "http/request.hpp"
 
-/*
-    Parser
- */
-
-enum TokenType
-{
-    TOKEN_INVALID,
-    TOKEN_IDENTIFIER,
-    TOKEN_STRING,
-    TOKEN_NUMBER,
-    TOKEN_LEFT_CURLY,
-    TOKEN_RIGHT_CURLY,
-    TOKEN_LINE_BREAK,
-    TOKEN_EOF
-};
-
-class Token
+class Location
 {
 public:
-    Token();
+    Location();
 
-    static Token ident(std::string str, int line, int column);
-    static Token num(int num, int line, int column);
-    static Token str(std::string str, int line, int column);
-    static Token left_curly(int line, int column);
-    static Token right_curly(int line, int column);
-    static Token ln(int line, int column);
-    static Token invalid();
-
-    TokenType type() const;
-    std::string str() const;
-    int get_int() const;
-    int line() const;
-    int column() const;
-
-    int width();
-    std::string content();
-
-private:
-    TokenType m_type;
-    std::string m_str;
-    int m_int;
-
-    int m_line;
-    int m_column;
-};
-
-std::ostream& operator<<(std::ostream& os, Token const& tok);
-
-class ConfigEntry
-{
-public:
-    ConfigEntry();
-    ~ConfigEntry();
-
-    bool is_inline();
-    void set_inline(bool b);
-
-    std::vector<Token>& args()
-    {
-        return m_arguments;
-    }
-    void add_arg(Token tok);
-
-    std::vector<ConfigEntry>& children()
-    {
-        return m_children;
-    }
-    void add_child(ConfigEntry entry);
-
-    std::string& source()
-    {
-        return m_source;
-    }
-    void set_source(std::string source)
-    {
-        m_source = source;
-    }
-
-    Token& left_curly()
-    {
-        return m_left_curly;
-    }
-    Token& right_curly()
-    {
-        return m_right_curly;
-    }
-    void set_curly(Token left, Token right)
-    {
-        m_left_curly = left;
-        m_right_curly = right;
-    }
-
-private:
-    std::vector<Token> m_arguments;
-    std::vector<ConfigEntry> m_children;
-    bool m_inline;
-    std::string m_source; // Maybe use a pointer ?
-
-    Token m_left_curly;
-    Token m_right_curly;
-};
-
-class Arg
-{
-public:
-    Arg(std::string name, TokenType type, void *ptr, bool optional = false)
-        : m_ptr(ptr), m_type(type), m_name(name), m_optional(optional)
+    virtual ~Location()
     {
     }
 
-    template <typename T> T *ptr()
-    {
-        return (T *)m_ptr;
-    }
-
-    TokenType type()
-    {
-        return m_type;
-    }
-    std::string& name()
-    {
-        return m_name;
-    }
-    bool optional()
-    {
-        return m_optional;
-    }
-
-private:
-    void *m_ptr;
-    TokenType m_type;
-    std::string m_name;
-    bool m_optional;
-};
-
-class Usage
-{
-public:
-    Usage()
-    {
-    }
-
-    Usage(std::string name, std::vector<Arg> args) : m_name(name), m_args(args)
-    {
-    }
-
-    std::string& name()
-    {
-        return m_name;
-    }
-    std::vector<Arg>& args()
-    {
-        return m_args;
-    }
-
-private:
-    std::string m_name;
-    std::vector<Arg> m_args;
-};
-
-class ConfigError
-{
-public:
-    enum Type
-    {
-        FILE_NOT_FOUND,
-        UNEXPECTED_TOKEN,
-        NOT_INLINE,
-        MISMATCH_CURLY,
-        MISMATCH_ENTRY,
-        UNKNOWN_ENTRY
-    };
-
-    static ConfigError not_found(std::string filename);
-    static ConfigError unexpected(std::string source, Token got, TokenType expected);
-    static ConfigError not_inline(std::string source, Token name);
-    static ConfigError mismatch_curly(std::string source, Token curly);
-    static ConfigError mismatch_entry(std::string source, Token tok, std::string expected, std::vector<Arg> args);
-    static ConfigError unknown_entry(std::string source, Token tok, std::vector<std::string> entries);
-
-    ConfigError();
-    void print(std::ostream& os);
-
-private:
-    std::string m_source;
-    Token m_token;
-    Type m_type;
-
-    struct
-    {
-        std::string filename;
-    } m_notfound;
-
-    struct UnexpectedToken
-    {
-        TokenType type;
-    } m_unexpected;
-
-    struct MismatchEntry
-    {
-        Usage usage;
-    } m_mismatch_entry;
-
-    struct UnknownEntry
-    {
-        std::vector<std::string> entries;
-    } m_unknown;
-
-    ConfigError(Type type, Token token, std::string source);
-
-    void _print_lines(std::ostream& os, int first_line, size_t num);
-    std::string _strerror();
-    std::string _strtok(TokenType type);
-};
-
-class ConfigParser
-{
-public:
-    ConfigParser();
-    ~ConfigParser();
-
-    Result<int, ConfigError> parse(std::string filename);
-    ConfigEntry& root();
-
-private:
-    ConfigEntry m_root;
-
-    std::vector<Token> _read_tokens(std::string source);
-};
-
-/*
-    Deserialisation
- */
-
-class Deser
-{
-public:
-    virtual Result<int, ConfigError> deserialize(ConfigEntry& from) = 0;
-
-    Result<int, ConfigError> expect_ident(std::string& content);
-    Result<int, ConfigError> expect_str(std::string& content);
-};
-
-/*
-    Config
- */
-
-class Server : public Deser
-{
-public:
     virtual Result<int, ConfigError> deserialize(ConfigEntry& from);
 
+    std::vector<Method> methods()
+    {
+        return m_methods;
+    }
+
+    std::string& route()
+    {
+        return m_route;
+    }
+
+    std::string& root()
+    {
+        return m_root;
+    }
+
+    bool indexing()
+    {
+        return m_enable_indexing;
+    }
+
+    std::string& default_page()
+    {
+        return m_default;
+    }
+
+    std::map<std::string, std::string>& cgis()
+    {
+        return m_cgis;
+    }
+
+    std::string& upload_dir()
+    {
+        return m_upload_directory;
+    }
+
 private:
-    int m_listen_port;
+    std::string m_route;
+
+    std::vector<Method> m_methods;
     std::string m_root;
+    bool m_enable_indexing;
+    /* Default page returned if a directory is returned. */
+    std::string m_default;
+    std::map<std::string, std::string> m_cgis;
+    std::string m_upload_directory;
+};
+
+class Server
+{
+public:
+    Server();
+
+    virtual ~Server()
+    {
+    }
+
+    virtual Result<int, ConfigError> deserialize(ConfigEntry& from);
+
+    std::string& server_name()
+    {
+        return m_server_name;
+    }
+
+    struct sockaddr_in& listen_addr()
+    {
+        return m_listen_addr;
+    }
+
+    std::map<int, std::string>& error_pages()
+    {
+        return m_error_pages;
+    }
+
+    size_t max_content_length()
+    {
+        return m_max_content_length;
+    }
+
+private:
+    std::string m_server_name;
+    struct sockaddr_in m_listen_addr;
+    std::map<int, std::string> m_error_pages;
+
+    /* Maximum accepted `Content-Length` */
+    size_t m_max_content_length;
+
+    std::vector<Location> m_locations;
 };
 
 class Config : public Deser
 {
 public:
+    Config();
+
+    virtual ~Config()
+    {
+    }
+
+    Result<int, ConfigError> load_from_file(std::string filepath);
     virtual Result<int, ConfigError> deserialize(ConfigEntry& from);
+
+    std::vector<Server> servers()
+    {
+        return m_servers;
+    }
 
 private:
     std::vector<Server> m_servers;

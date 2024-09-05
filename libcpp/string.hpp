@@ -29,7 +29,7 @@ std::string to_string(T value, const int base)
     return s.str();
 }
 
-std::vector<std::string> split(std::string s, std::string delimiter)
+inline std::vector<std::string> split(std::string s, std::string delimiter)
 {
     std::vector<std::string> parts;
     size_t last = 0;
@@ -44,7 +44,7 @@ std::vector<std::string> split(std::string s, std::string delimiter)
     return parts;
 }
 
-std::vector<std::string> split(std::string s, char delimiter)
+inline std::vector<std::string> split(std::string s, char delimiter)
 {
     std::vector<std::string> parts;
     size_t last = 0;
@@ -59,7 +59,7 @@ std::vector<std::string> split(std::string s, char delimiter)
     return parts;
 }
 
-std::string trim(std::string s)
+inline std::string trim(std::string s)
 {
     size_t start;
     size_t end;
