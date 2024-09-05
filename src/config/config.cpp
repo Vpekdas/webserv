@@ -141,11 +141,11 @@ Result<int, ConfigError> Location::deserialize(ConfigEntry& from)
     return 0;
 }
 
-Server::Server()
+ServerConfig::ServerConfig()
 {
 }
 
-Result<int, ConfigError> Server::deserialize(ConfigEntry& from)
+Result<int, ConfigError> ServerConfig::deserialize(ConfigEntry& from)
 {
     for (size_t i = 0; i < from.children().size(); i++)
     {
@@ -220,7 +220,7 @@ Result<int, ConfigError> Config::deserialize(ConfigEntry& from)
         if (entry_name.content() != "server")
             return ConfigError::mismatch_entry(entry.source(), entry_name, "server", std::vector<Arg>());
 
-        Server server;
+        ServerConfig server;
         Result<int, ConfigError> res = server.deserialize(entry);
         EXPECT_OK(int, ConfigError, res);
 

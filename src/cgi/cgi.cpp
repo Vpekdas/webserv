@@ -60,6 +60,8 @@ Result<std::string, HttpStatus> CGI::process(std::string filepath, Request& req)
         };
         // clang-format on
 
+        // TODO: maybe use chdir here.
+
         if (execve(m_path.c_str(), (char **)argv, (char **)envp) == -1)
         {
             close(m_pipefds[0]);

@@ -15,7 +15,7 @@
 #include <sys/epoll.h>
 #include <unistd.h>
 
-Webserv::Webserv() : m_router("portfolio/dist")
+Webserv::Webserv()
 {
 }
 
@@ -44,6 +44,8 @@ int Webserv::initialize(std::string config_path)
         res.unwrap_err().print(ws::log);
         return 1;
     }
+
+    m_router = Router(m_config.servers()[0]);
 
     // Initialize epoll to efficiently manage multiple file descriptors for I/O
     // events.
