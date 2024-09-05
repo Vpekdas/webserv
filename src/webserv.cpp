@@ -15,7 +15,7 @@
 #include <sys/epoll.h>
 #include <unistd.h>
 
-Webserv::Webserv() : m_router("portfolio/dist")
+Webserv::Webserv() : m_router("www")
 {
 }
 
@@ -45,8 +45,6 @@ int Webserv::initialize(std::string config_path)
         return 1;
     }
 
-    // Initialize epoll to efficiently manage multiple file descriptors for I/O
-    // events.
     m_epollFd = epoll_create1(0);
     if (m_epollFd == -1)
     {
@@ -54,8 +52,6 @@ int Webserv::initialize(std::string config_path)
         return FAILURE;
     }
 
-    // Create a socket for network communication using IPv4 and TCP.
-    // This socket will be used to listen for incoming connections.
     m_sockFd = socket(AF_INET, SOCK_STREAM, 0);
     if (m_sockFd == -1)
     {
@@ -75,21 +71,14 @@ int Webserv::initialize(std::string config_path)
     m_sockAddr.sin_family = AF_INET;
     m_sockAddr.sin_addr.s_addr = INADDR_ANY;
     m_sockAddr.sin_port = htons(9999);
-
     ws::log << ws::info << "Listening on port " << ntohs(m_sockAddr.sin_port) << "\n";
 
-    // Ensure the server can accept incoming connections by binding the socket to
-    // the specified IP address and port. This step is crucial for the server to
-    // listen for and accept client requests on the designated network interface.
     if (bind(m_sockFd, (struct sockaddr *)&m_sockAddr, sizeof(sockaddr)) == FAILURE)
     {
         std::cerr << NRED << strerror(errno) << RED << ": bind() failed." << RESET << std::endl;
         return FAILURE;
     }
 
-    // Prepare the socket to accept incoming connection requests by setting it to
-    // a listening state. This is essential for the server to handle multiple
-    // client connections concurrently.
     if (listen(m_sockFd, 42) == FAILURE)
     {
         std::cerr << NRED << strerror(errno) << RED << ": listen() failed." << RESET << std::endl;
@@ -111,7 +100,7 @@ Result<Connection, int> Webserv::acceptConnection()
     }
 
     struct epoll_event event;
-    event.events = EPOLLIN | EPOLLRDHUP;
+    event.events = EPOLLIN | EPOLLRDHUP | EPOLLHUP | EPOLLERR;
     event.data.fd = conn;
 
     if (epoll_ctl(m_epollFd, EPOLL_CTL_ADD, conn, &event) == -1)
@@ -119,7 +108,6 @@ Result<Connection, int> Webserv::acceptConnection()
         std::cerr << NRED << strerror(errno) << RED << ": epoll_ctl() failed." << RESET << std::endl;
         close(m_epollFd);
     }
-
     return Connection(conn, addr, event);
 }
 
@@ -149,21 +137,15 @@ void Webserv::eventLoop()
                 continue;
             }
 
-            if ((events[i].events & EPOLLRDHUP) == EPOLLRDHUP)
+            if ((events[i].events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR)))
             {
                 Connection& conn = m_connections[events[i].data.fd];
                 close_connection(conn);
                 continue;
             }
 
-            // Check if the current event indicates that there is data to read on the
-            // file descriptor.
-            // This is crucial for processing incoming data from the client, ensuring
-            // the server can handle read operations when data is available.
-            else if ((events[i].events & EPOLLIN) == EPOLLIN)
+            else if (events[i].events & EPOLLIN)
             {
-                // std::cout << CYAN << "Reading file descriptor: " << events[i].data.fd << RESET << std::endl;
-
                 int n;
                 char buf[READ_SIZE];
 
@@ -183,7 +165,7 @@ void Webserv::eventLoop()
                 if (n < READ_SIZE)
                 {
                     struct epoll_event event;
-                    event.events = EPOLLOUT | EPOLLRDHUP;
+                    event.events = EPOLLOUT | EPOLLRDHUP | EPOLLERR | EPOLLHUP;
                     event.data.fd = events[i].data.fd;
 
                     if (epoll_ctl(m_epollFd, EPOLL_CTL_MOD, events[i].data.fd, &event) == -1)
@@ -195,7 +177,7 @@ void Webserv::eventLoop()
                 }
             }
 
-            else if ((events[i].events & EPOLLOUT) == EPOLLOUT)
+            else if ((events[i].events & EPOLLOUT))
             {
                 Connection& conn = m_connections[events[i].data.fd];
 
@@ -230,10 +212,11 @@ void Webserv::eventLoop()
                 else
                     ws::log << ws::info << "GET `" << req.path() << "` -> " << NRED << response.status().code() << " "
                             << response.status() << RESET << "\n";
+
                 response.send(events[i].data.fd);
 
                 struct epoll_event event;
-                event.events = EPOLLIN | EPOLLRDHUP;
+                event.events = EPOLLIN | EPOLLRDHUP | EPOLLHUP | EPOLLERR;
                 event.data.fd = events[i].data.fd;
 
                 if (epoll_ctl(m_epollFd, EPOLL_CTL_MOD, events[i].data.fd, &event) == -1)
@@ -267,7 +250,7 @@ void Webserv::close_connection(Connection& conn)
 void Webserv::keep_alive(Connection& conn)
 {
     struct epoll_event event;
-    event.events = EPOLLIN | EPOLLRDHUP;
+    event.events = EPOLLIN | EPOLLRDHUP | EPOLLHUP | EPOLLERR;
     event.data.fd = conn.fd();
 
     if (epoll_ctl(m_epollFd, EPOLL_CTL_MOD, conn.fd(), &event) == -1)

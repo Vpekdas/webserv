@@ -1,5 +1,12 @@
 #include "logger.hpp"
 #include "webserv.hpp"
+#include <csignal>
+
+void sigpipe(int signum)
+{
+    (void)signum;
+    ws::log << ws::dbg << "SIGPIPE received\n";
+}
 
 int main(int argc, char *argv[])
 {
@@ -13,6 +20,8 @@ int main(int argc, char *argv[])
 
     File::_build_mime_table();
     Webserv webserv;
+
+    signal(SIGPIPE, sigpipe);
 
     if (webserv.initialize(argv[1]) != 0)
         return 1;
