@@ -21,6 +21,17 @@ Server::Server(ServerConfig& config) : m_config(config)
     if (listen(m_sock_fd, 42) == FAILURE)
         std::cerr << NRED << strerror(errno) << RED << ": listen() failed." << RESET << std::endl;
 }
+
 Server::~Server()
 {
+}
+
+int Server::sock_fd()
+{
+    return m_sock_fd;
+}
+
+ServerConfig& Server::config()
+{
+    return m_config;
 }

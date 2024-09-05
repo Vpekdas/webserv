@@ -106,12 +106,18 @@ void Webserv::eventLoop()
     int eventCount = 0;
     struct epoll_event events[MAX_EVENTS];
 
+    // ServerConfig serverConfig;
+    // Server server(serverConfig);
+
     struct epoll_event socket_event;
     socket_event.events = EPOLLIN;
-    socket_event.data.fd = m_sockFd;
+    socket_event.data.fd = m_epollFd;
 
     if (epoll_ctl(m_epollFd, EPOLL_CTL_ADD, m_sockFd, &socket_event) == -1)
         std::cerr << NRED << strerror(errno) << RED << ": epoll_ctl() failed." << RESET << std::endl;
+
+    // if (epoll_ctl(m_epollFd, EPOLL_CTL_ADD, server.sock_fd(), &socket_event) == -1)
+    //     std::cerr << NRED << strerror(errno) << RED << ": epoll_ctl() failed." << RESET << std::endl;
 
     while (1)
     {
