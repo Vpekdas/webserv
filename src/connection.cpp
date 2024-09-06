@@ -34,3 +34,29 @@ void Connection::set_last_request(Request req)
 {
     m_req = req;
 }
+
+void Connection::set_epollin(int epoll_fd)
+{
+    struct epoll_event event;
+    event.events = EPOLLIN | EPOLLRDHUP | EPOLLERR | EPOLLHUP;
+    event.data.fd = m_fd;
+
+    if (epoll_ctl(epoll_fd, EPOLL_CTL_MOD, m_fd, &event) == -1)
+    {
+        ws::log << ws::err << "epoll_ctrl() failed: " << strerror(errno) << "\n";
+        // TODO:
+    }
+}
+
+void Connection::set_epollout(int epoll_fd)
+{
+    struct epoll_event event;
+    event.events = EPOLLOUT | EPOLLRDHUP | EPOLLERR | EPOLLHUP;
+    event.data.fd = m_fd;
+
+    if (epoll_ctl(epoll_fd, EPOLL_CTL_MOD, m_fd, &event) == -1)
+    {
+        ws::log << ws::err << "epoll_ctrl() failed: " << strerror(errno) << "\n";
+        // TODO:
+    }
+}

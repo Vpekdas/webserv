@@ -184,12 +184,13 @@ void Webserv::eventLoop()
                         conn.set_bytes_read(leftovers.size());
                     }
 
-                    if (req.content_length() == (size_t)-1)
-                    {
-                        // TODO: Missing `Content-Length`, should return an error or threat it as `0` ?
-                    }
-
                     req_str.clear();
+
+                    if (!req.has_param("Content-Length"))
+                    {
+                        conn.set_epollout(m_epollFd);
+                        continue;
+                    }
                 }
                 else if (conn.waiting_for_body())
                 {
@@ -198,18 +199,7 @@ void Webserv::eventLoop()
                 }
 
                 if (n < READ_SIZE || (n == READ_SIZE && conn.bytes_read() > conn.last_request().content_length()))
-                {
-                    struct epoll_event event;
-                    event.events = EPOLLOUT | EPOLLRDHUP | EPOLLERR | EPOLLHUP;
-                    event.data.fd = events[i].data.fd;
-
-                    if (epoll_ctl(m_epollFd, EPOLL_CTL_MOD, events[i].data.fd, &event) == -1)
-                    {
-                        ws::log << ws::err << "epoll_ctrl() failed: " << strerror(errno) << "\n";
-                        close(events[i].data.fd);
-                        continue;
-                    }
-                }
+                    conn.set_epollout(m_epollFd);
             }
 
             else if ((events[i].events & EPOLLOUT))
@@ -219,7 +209,11 @@ void Webserv::eventLoop()
                 Request req = conn.last_request();
                 Response response;
 
-                if (conn.bytes_read() > req.content_length())
+                if (!req.has_param("Content-Length"))
+                {
+                    response = Response::httpcat(411); // Length required
+                }
+                else if (conn.bytes_read() > req.content_length())
                 {
                     response = Response::httpcat(413); // Payload too large
                 }

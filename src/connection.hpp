@@ -42,6 +42,9 @@ public:
 
     std::string& getReqStr();
 
+    void set_epollin(int epoll_fd);
+    void set_epollout(int epoll_fd);
+
 private:
     struct sockaddr_in m_addr;
     int m_fd;

@@ -33,6 +33,12 @@ std::ostream& operator<<(std::ostream& os, HttpStatus const& error)
     case 404:
         os << "Not found";
         break;
+    case 405:
+        os << "Method not allowed";
+        break;
+    case 411:
+        os << "Length required";
+        break;
     case 413:
         os << "Payload too large";
         break;

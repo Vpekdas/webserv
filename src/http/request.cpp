@@ -16,6 +16,11 @@ std::string& Request::get_param(std::string key)
     return m_params[key];
 }
 
+bool Request::has_param(std::string key)
+{
+    return m_params.count(key) > 0;
+}
+
 std::vector<std::string> _split(const std::string& s, const std::string& delimiter)
 {
     std::vector<std::string> parts;

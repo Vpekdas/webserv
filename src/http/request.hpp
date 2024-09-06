@@ -28,6 +28,7 @@ public:
     }
 
     std::string& get_param(std::string key);
+    bool has_param(std::string key);
 
     bool is_keep_alive()
     {
