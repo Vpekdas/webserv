@@ -1,6 +1,7 @@
 #pragma once
 
 #include "result.hpp"
+#include <cstdlib>
 #include <map>
 #include <string>
 
@@ -38,6 +39,11 @@ public:
         return m_params.count("Connection") > 0 && m_params["Connection"] == "closed";
     }
 
+    size_t content_length()
+    {
+        return m_params.count("Content-Length") > 0 ? std::atoi(m_params["Content-Length"].c_str()) : (size_t)-1;
+    }
+
     std::string& cookies()
     {
         return get_param("Cookie");
@@ -58,6 +64,11 @@ public:
         return m_method;
     }
 
+    size_t header_size()
+    {
+        return m_header_size;
+    }
+
 private:
     Method m_method;
     std::string m_path;
@@ -65,6 +76,8 @@ private:
     std::string m_protocol;
     std::map<std::string, std::string> m_args;
     std::string m_body;
+
+    size_t m_header_size;
 
     void _parse_path(std::string path);
 };

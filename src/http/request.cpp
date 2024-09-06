@@ -1,4 +1,5 @@
 #include "request.hpp"
+#include "string.hpp"
 #include <cctype>
 #include <iostream>
 #include <vector>
@@ -30,22 +31,6 @@ std::vector<std::string> _split(const std::string& s, const std::string& delimit
     return parts;
 }
 
-std::string _trim(std::string s)
-{
-    size_t start;
-    size_t end;
-
-    for (start = 0; start < s.size() && isspace(s[start]); start++)
-    {
-    }
-
-    for (end = s.size() - 1; end > 0 && isspace(s[end]); end--) // TODO: recode isspace
-    {
-    }
-
-    return s.substr(start, end);
-}
-
 /*
     Extract parameters (eg `<url>?foo=bar&test=123`) from the path.
  */
@@ -75,7 +60,8 @@ void Request::_parse_path(std::string path)
 
 Result<Request, int> Request::parse(std::string source)
 {
-    std::string header = source.substr(0, source.find(SEP SEP));
+    size_t pos = source.find(SEP SEP);
+    std::string header = source.substr(0, pos);
     std::vector<std::string> lines = _split(header, SEP);
 
     // We need at leat the `GET / HTTP/1.1`
@@ -93,6 +79,7 @@ Result<Request, int> Request::parse(std::string source)
     std::string protocol = request_line[2]; // HTTP/2.x works differently than HTTP/1.x so this should be checked for
 
     Request request;
+    request.m_header_size = pos + 4; // "\r\n\r\n"
 
     if (method == "GET")
         request.m_method = GET;
@@ -112,8 +99,8 @@ Result<Request, int> Request::parse(std::string source)
     for (size_t i = 1; i < lines.size(); i++)
     {
         size_t comma = lines[i].find(":");
-        std::string key = _trim(lines[i].substr(0, comma));
-        std::string value = _trim(lines[i].substr(comma + 1));
+        std::string key = trim(lines[i].substr(0, comma));
+        std::string value = trim(lines[i].substr(comma + 1));
 
         request.m_params[key] = value;
     }

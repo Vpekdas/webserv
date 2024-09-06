@@ -10,7 +10,7 @@ HttpStatus::HttpStatus(int code) : m_code(code)
 
 bool HttpStatus::is_error() const
 {
-    return m_code > 300;
+    return m_code >= 300;
 }
 
 int HttpStatus::code() const
@@ -32,6 +32,9 @@ std::ostream& operator<<(std::ostream& os, HttpStatus const& error)
         break;
     case 404:
         os << "Not found";
+        break;
+    case 413:
+        os << "Payload too large";
         break;
     case 500:
         os << "Internal server error";

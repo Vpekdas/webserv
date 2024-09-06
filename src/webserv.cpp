@@ -1,6 +1,10 @@
 #include "webserv.hpp"
 #include "config/config.hpp"
+#include "http/request.hpp"
+#include "http/response.hpp"
 #include "server.hpp"
+#include <cstring>
+#include <iostream>
 
 Webserv::Webserv() : m_running(true)
 {
@@ -103,7 +107,7 @@ Result<Connection, int> Webserv::acceptConnection()
         std::cerr << NRED << strerror(errno) << RED << ": epoll_ctl() failed." << RESET << std::endl;
         close(m_epollFd);
     }
-    return Connection(conn, addr, event);
+    return Connection(conn, addr);
 }
 
 void Webserv::eventLoop()
@@ -148,12 +152,13 @@ void Webserv::eventLoop()
             else if (events[i].events & EPOLLIN)
             {
                 int n;
-                char buf[READ_SIZE];
+                char buf[READ_SIZE + 1];
 
                 Connection& conn = m_connections[events[i].data.fd];
                 std::string& req_str = conn.getReqStr();
 
                 n = recv(events[i].data.fd, buf, READ_SIZE, 0);
+                buf[n] = '\0';
 
                 if (n == -1)
                 {
@@ -161,9 +166,38 @@ void Webserv::eventLoop()
                     close_connection(conn);
                     continue;
                 }
-                req_str.append(buf, n);
 
-                if (n < READ_SIZE)
+                if (!conn.waiting_for_body())
+                    req_str.append(buf, n);
+
+                // We reach the end of the header, we can now parse it and check the `Content-Length` and other
+                // parameters.
+                if (!conn.waiting_for_body() && std::strstr(buf, SEP SEP))
+                {
+                    Request req = Request::parse(req_str).unwrap();
+                    conn.set_last_request(req);
+
+                    std::string leftovers = req_str.substr(req.header_size());
+                    if (!leftovers.empty())
+                    {
+                        // TODO: Process the data.
+                        conn.set_bytes_read(leftovers.size());
+                    }
+
+                    if (req.content_length() == (size_t)-1)
+                    {
+                        // TODO: Missing `Content-Length`, should return an error or threat it as `0` ?
+                    }
+
+                    req_str.clear();
+                }
+                else if (conn.waiting_for_body())
+                {
+                    conn.set_bytes_read(conn.bytes_read() + n);
+                    // TODO: Process the data.
+                }
+
+                if (n < READ_SIZE || (n == READ_SIZE && conn.bytes_read() > conn.last_request().content_length()))
                 {
                     struct epoll_event event;
                     event.events = EPOLLOUT | EPOLLRDHUP | EPOLLERR | EPOLLHUP;
@@ -182,25 +216,22 @@ void Webserv::eventLoop()
             {
                 Connection& conn = m_connections[events[i].data.fd];
 
-                Result<Request, int> res2 = Request::parse(conn.getReqStr());
-
-                if (res2.is_err())
-                {
-                    ws::log << ws::err << "Empty request from connection " << conn.fd() << "\n";
-                    close_connection(conn);
-                    continue;
-                }
-
-                Request req = res2.unwrap(); // FIXME: `req_str` is empty and crash after a connection is closed
-                conn.getReqStr().clear();
-                Result<Response, HttpStatus> res = m_router.route(req);
-
+                Request req = conn.last_request();
                 Response response;
 
-                if (res.is_err())
-                    response = Response::httpcat(res.unwrap_err());
+                if (conn.bytes_read() > req.content_length())
+                {
+                    response = Response::httpcat(413); // Payload too large
+                }
                 else
-                    response = res.unwrap();
+                {
+                    Result<Response, HttpStatus> res = m_router.route(req);
+
+                    if (res.is_err())
+                        response = Response::httpcat(res.unwrap_err());
+                    else
+                        response = res.unwrap();
+                }
 
                 if (req.is_keep_alive())
                     response.add_param("Connection", "keep-alive");
