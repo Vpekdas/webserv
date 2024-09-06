@@ -46,7 +46,7 @@ public:
     int initialize(std::string config_path);
     void eventLoop();
 
-    void setEventCount(int eventCount);
+    void quit();
 
     void close_connection(Connection& conn);
     void keep_alive(Connection& conn);
@@ -56,6 +56,8 @@ private:
     int m_sockFd;
     std::map<int, Connection> m_connections;
     struct sockaddr_in m_sockAddr;
+
+    bool m_running;
 
     Config m_config;
     Router m_router;

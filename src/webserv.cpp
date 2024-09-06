@@ -2,7 +2,7 @@
 #include "config/config.hpp"
 #include "server.hpp"
 
-Webserv::Webserv()
+Webserv::Webserv() : m_running(true)
 {
 }
 
@@ -14,6 +14,11 @@ int Webserv::getEpollFd() const
 int Webserv::getSockFd() const
 {
     return m_sockFd;
+}
+
+void Webserv::quit()
+{
+    m_running = false;
 }
 
 int Webserv::initialize(std::string config_path)
@@ -119,7 +124,7 @@ void Webserv::eventLoop()
     // if (epoll_ctl(m_epollFd, EPOLL_CTL_ADD, server.sock_fd(), &socket_event) == -1)
     //     std::cerr << NRED << strerror(errno) << RED << ": epoll_ctl() failed." << RESET << std::endl;
 
-    while (1)
+    while (m_running)
     {
         eventCount = epoll_wait(m_epollFd, events, MAX_EVENTS, -1);
         for (int i = 0; i < eventCount; i++)
