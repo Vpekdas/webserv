@@ -9,6 +9,7 @@
 #include "result.hpp"
 
 #include <algorithm>
+#include <iostream>
 #include <map>
 #include <string>
 #include <sys/stat.h>
@@ -31,9 +32,7 @@ Result<Response, HttpStatus> Router::_route_with_location(Request& req, Location
     }
 
     if (n == 0)
-        return HttpStatus(405);
-
-    ws::log << ws::dbg << loc.route() << "\n";
+        return HttpStatus(405); // Method not allowed
 
     struct stat sb;
     std::string path = loc.root() + "/" + req.path().substr(loc.route().size());

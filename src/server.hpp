@@ -1,18 +1,22 @@
 #pragma once
 
 #include "config/config.hpp"
+#include "router.hpp"
 #include <iostream>
 
 class Server
 {
 public:
-    Server(ServerConfig& config);
+    Server();
+    Server(ServerConfig config);
     ~Server();
 
     int sock_fd();
     ServerConfig& config();
+    Router& router();
 
 private:
-    ServerConfig& m_config;
+    ServerConfig m_config;
     int m_sock_fd;
+    Router m_router;
 };

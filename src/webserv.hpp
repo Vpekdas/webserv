@@ -1,15 +1,14 @@
 #pragma once
 
-#include "config/config.hpp"
-#include "connection.hpp"
-#include "router.hpp"
-
 #include "colors.hpp"
+#include "config/config.hpp"
 #include "config/parser.hpp"
 #include "connection.hpp"
 #include "http/request.hpp"
 #include "http/response.hpp"
 #include "logger.hpp"
+#include "router.hpp"
+#include "server.hpp"
 #include <cerrno>
 #include <csignal>
 #include <cstdio>
@@ -39,9 +38,8 @@ public:
     Webserv();
 
     int getEpollFd() const;
-    int getSockFd() const;
 
-    Result<Connection, int> acceptConnection();
+    Result<Connection, int> acceptConnection(int sock_fd);
 
     int initialize(std::string config_path);
     void eventLoop();
@@ -53,12 +51,10 @@ public:
 
 private:
     int m_epollFd;
-    int m_sockFd;
     std::map<int, Connection> m_connections;
-    struct sockaddr_in m_sockAddr;
 
     bool m_running;
 
     Config m_config;
-    Router m_router;
+    std::map<int, Server> m_servers;
 };

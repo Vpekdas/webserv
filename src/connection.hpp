@@ -12,10 +12,15 @@ class Connection
 public:
     Connection();
 
-    Connection(int fd, struct sockaddr_in addr);
+    Connection(int fd, int sock_fd, struct sockaddr_in addr);
 
     struct sockaddr_in addr();
     int fd() const;
+
+    int sock_fd()
+    {
+        return m_sock_fd;
+    }
 
     Request& last_request();
     void set_last_request(Request req);
@@ -48,6 +53,7 @@ public:
 private:
     struct sockaddr_in m_addr;
     int m_fd;
+    int m_sock_fd;
 
     std::string m_reqStr;
 

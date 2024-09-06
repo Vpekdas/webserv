@@ -2,7 +2,9 @@
 #include "config/config.hpp"
 #include "http/request.hpp"
 #include "http/response.hpp"
+#include "logger.hpp"
 #include "server.hpp"
+#include <cstddef>
 #include <cstring>
 #include <iostream>
 
@@ -13,11 +15,6 @@ Webserv::Webserv() : m_running(true)
 int Webserv::getEpollFd() const
 {
     return m_epollFd;
-}
-
-int Webserv::getSockFd() const
-{
-    return m_sockFd;
 }
 
 void Webserv::quit()
@@ -41,8 +38,6 @@ int Webserv::initialize(std::string config_path)
         return FAILURE;
     }
 
-    m_router = Router(m_config.servers()[0]);
-
     m_epollFd = epoll_create1(0);
     if (m_epollFd == -1)
     {
@@ -50,48 +45,15 @@ int Webserv::initialize(std::string config_path)
         return FAILURE;
     }
 
-    m_sockFd = socket(AF_INET, SOCK_STREAM, 0);
-    if (m_sockFd == -1)
-    {
-        ws::log << ws::err << RED << ": socket() failed: " << strerror(errno) << RESET << "\n";
-        return FAILURE;
-    }
-
-    // By doing this, we can use the same port after relaunching the web server.
-    // Without it, the port remains in use for a while.
-    int b = true;
-    if (setsockopt(m_sockFd, SOL_SOCKET, SO_REUSEPORT, &b, sizeof(int)) == FAILURE)
-    {
-        std::cerr << NRED << strerror(errno) << RED << ": setsockopt() failed." << RESET << std::endl;
-        return FAILURE;
-    }
-
-    m_sockAddr.sin_family = AF_INET;
-    m_sockAddr.sin_addr.s_addr = INADDR_ANY;
-    m_sockAddr.sin_port = htons(9999);
-    ws::log << ws::info << "Listening on port " << ntohs(m_sockAddr.sin_port) << "\n";
-
-    if (bind(m_sockFd, (struct sockaddr *)&m_sockAddr, sizeof(sockaddr)) == FAILURE)
-    {
-        std::cerr << NRED << strerror(errno) << RED << ": bind() failed." << RESET << std::endl;
-        return FAILURE;
-    }
-
-    if (listen(m_sockFd, 42) == FAILURE)
-    {
-        std::cerr << NRED << strerror(errno) << RED << ": listen() failed." << RESET << std::endl;
-        return FAILURE;
-    }
-
     return SUCCESS;
 }
 
-Result<Connection, int> Webserv::acceptConnection()
+Result<Connection, int> Webserv::acceptConnection(int sock_fd)
 {
     socklen_t addrLen = sizeof(struct sockaddr_in);
     struct sockaddr_in addr = {};
 
-    int conn = accept(m_sockFd, (struct sockaddr *)&addr, &addrLen);
+    int conn = accept(sock_fd, (struct sockaddr *)&addr, &addrLen);
     if (conn == -1)
     {
         std::cerr << NRED << strerror(errno) << RED << ": accept() failed." << RESET << std::endl;
@@ -107,7 +69,7 @@ Result<Connection, int> Webserv::acceptConnection()
         std::cerr << NRED << strerror(errno) << RED << ": epoll_ctl() failed." << RESET << std::endl;
         close(m_epollFd);
     }
-    return Connection(conn, addr);
+    return Connection(conn, sock_fd, addr);
 }
 
 void Webserv::eventLoop()
@@ -118,24 +80,39 @@ void Webserv::eventLoop()
     // ServerConfig serverConfig;
     // Server server(serverConfig);
 
-    struct epoll_event socket_event;
-    socket_event.events = EPOLLIN;
-    socket_event.data.fd = m_sockFd;
+    // struct epoll_event socket_event;
+    // socket_event.events = EPOLLIN;
+    // socket_event.data.fd = m_sockFd;
 
-    if (epoll_ctl(m_epollFd, EPOLL_CTL_ADD, m_sockFd, &socket_event) == -1)
-        std::cerr << NRED << strerror(errno) << RED << ": epoll_ctl() failed." << RESET << std::endl;
+    // if (epoll_ctl(m_epollFd, EPOLL_CTL_ADD, m_sockFd, &socket_event) == -1)
+    //     std::cerr << NRED << strerror(errno) << RED << ": epoll_ctl() failed." << RESET << std::endl;
 
     // if (epoll_ctl(m_epollFd, EPOLL_CTL_ADD, server.sock_fd(), &socket_event) == -1)
     //     std::cerr << NRED << strerror(errno) << RED << ": epoll_ctl() failed." << RESET << std::endl;
+
+    for (std::size_t i = 0; i < m_config.servers().size(); i++)
+    {
+        ServerConfig& config = m_config.servers()[i];
+        Server server(config);
+
+        struct epoll_event socket_event;
+        socket_event.events = EPOLLIN;
+        socket_event.data.fd = server.sock_fd();
+
+        if (epoll_ctl(m_epollFd, EPOLL_CTL_ADD, server.sock_fd(), &socket_event) == -1)
+            std::cerr << NRED << strerror(errno) << RED << ": epoll_ctl() failed." << RESET << std::endl;
+
+        m_servers[server.sock_fd()] = server;
+    }
 
     while (m_running)
     {
         eventCount = epoll_wait(m_epollFd, events, MAX_EVENTS, -1);
         for (int i = 0; i < eventCount; i++)
         {
-            if (events[i].data.fd == m_sockFd)
+            if (m_servers.count(events[i].data.fd) > 0)
             {
-                Connection conn = acceptConnection().unwrap();
+                Connection conn = acceptConnection(events[i].data.fd).unwrap();
                 if (m_connections.count(conn.fd()) > 0)
                     ws::log << ws::dbg << "Connection " << conn.fd() << " already in map\n";
                 m_connections[conn.fd()] = conn;
@@ -209,17 +186,18 @@ void Webserv::eventLoop()
                 Request req = conn.last_request();
                 Response response;
 
-                if (!req.has_param("Content-Length"))
+                /*if (!req.has_param("Content-Length"))
                 {
                     response = Response::httpcat(411); // Length required
                 }
-                else if (conn.bytes_read() > req.content_length())
+                else */
+                if (conn.bytes_read() > req.content_length())
                 {
                     response = Response::httpcat(413); // Payload too large
                 }
                 else
                 {
-                    Result<Response, HttpStatus> res = m_router.route(req);
+                    Result<Response, HttpStatus> res = m_servers[conn.sock_fd()].router().route(req);
 
                     if (res.is_err())
                         response = Response::httpcat(res.unwrap_err());
@@ -241,16 +219,7 @@ void Webserv::eventLoop()
 
                 response.send(events[i].data.fd);
 
-                struct epoll_event event;
-                event.events = EPOLLIN | EPOLLRDHUP | EPOLLHUP | EPOLLERR;
-                event.data.fd = events[i].data.fd;
-
-                if (epoll_ctl(m_epollFd, EPOLL_CTL_MOD, events[i].data.fd, &event) == -1)
-                {
-                    ws::log << ws::err << "epoll_ctrl(EPOLL_CTL_MOD) failed: " << strerror(errno) << "\n";
-                    close(events[i].data.fd);
-                    continue;
-                }
+                conn.set_epollin(m_epollFd);
 
                 // Close the connection if the client either close the connection or don't want to keep
                 // it alive.
@@ -262,7 +231,6 @@ void Webserv::eventLoop()
         }
     }
     close(m_epollFd);
-    close(m_sockFd);
 }
 
 void Webserv::close_connection(Connection& conn)

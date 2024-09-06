@@ -6,7 +6,8 @@ Connection::Connection()
 {
 }
 
-Connection::Connection(int conn, struct sockaddr_in addr) : m_addr(addr), m_fd(conn), m_body(false), m_bytes_read(0)
+Connection::Connection(int conn, int sock_fd, struct sockaddr_in addr)
+    : m_addr(addr), m_fd(conn), m_sock_fd(sock_fd), m_body(false), m_bytes_read(0)
 {
 }
 
