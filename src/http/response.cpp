@@ -6,7 +6,6 @@
 #include "file.hpp"
 #include "request.hpp"
 #include "response.hpp"
-#include "smart_pointers.hpp"
 #include "string.hpp"
 
 // clang-format off
@@ -40,11 +39,11 @@ static std::string source =
 "</html>" SEP;
 // clang-format on
 
-Response::Response() : m_status(200)
+Response::Response() : m_status(200), m_body(NULL)
 {
 }
 
-Response::Response(HttpStatus status) : m_status(status)
+Response::Response(HttpStatus status) : m_status(status), m_body(NULL)
 {
     (void)m_body;
 }
@@ -93,6 +92,11 @@ Response Response::from_cgi(HttpStatus status, std::string str)
 HttpStatus Response::status()
 {
     return m_status;
+}
+
+File *Response::body()
+{
+    return m_body;
 }
 
 std::string Response::encode_header()

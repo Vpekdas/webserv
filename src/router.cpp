@@ -1,25 +1,22 @@
-#include "router.hpp"
+#include <map>
+#include <string>
+#include <sys/stat.h>
+#include <unistd.h>
+
 #include "cgi/cgi.hpp"
 #include "config/config.hpp"
 #include "file.hpp"
 #include "http/request.hpp"
 #include "http/response.hpp"
 #include "http/status.hpp"
-#include "logger.hpp"
 #include "result.hpp"
-
-#include <algorithm>
-#include <iostream>
-#include <map>
-#include <string>
-#include <sys/stat.h>
-#include <unistd.h>
+#include "router.hpp"
 
 Router::Router(ServerConfig config) : m_config(config)
 {
 }
 
-Result<Response, HttpStatus> Router::_route_with_location(Request& req, Location& loc)
+Response Router::_route_with_location(Request& req, Location& loc)
 {
     size_t n = 0;
     for (std::vector<Method>::iterator it = loc.methods().begin(); it != loc.methods().end(); it++)
@@ -62,7 +59,8 @@ Result<Response, HttpStatus> Router::_route_with_location(Request& req, Location
     {
         CGI cgi(loc.cgis()[ext]);
         Result<std::string, HttpStatus> res = cgi.process(final_path, req);
-        EXPECT_OK(Response, HttpStatus, res);
+        if (res.is_err())
+            return Response::httpcat(res.unwrap_err());
 
         return Response::from_cgi(200, res.unwrap());
     }
@@ -72,7 +70,7 @@ Result<Response, HttpStatus> Router::_route_with_location(Request& req, Location
     }
 }
 
-Result<Response, HttpStatus> Router::route(Request& req)
+Response Router::route(Request& req)
 {
     std::string path = req.path();
 
@@ -85,47 +83,3 @@ Result<Response, HttpStatus> Router::route(Request& req)
 
     return HttpStatus(404);
 }
-
-// Result<Response, HttpStatus> Router::route(Request& req)
-// {
-//     std::string full_path = m_root + "/" + req.path();
-//     std::string ext = full_path.substr(full_path.rfind('.') + 1);
-
-//     struct stat sb;
-
-//     // A special case: append `index.html` or `index.php` if `path` is a directory.
-//     // TODO: If both exists, which one has the priority ?
-//     if ((stat(full_path.c_str(), &sb) != -1) && S_ISDIR(sb.st_mode))
-//     {
-//         std::string new_path = full_path + "/index.php";
-
-//         if (access(new_path.c_str(), F_OK | R_OK) != -1)
-//             full_path = new_path;
-//         else
-//             full_path = full_path + "/index.html";
-//     }
-
-//     // Either go through a CGI or send the file.
-
-//     if (access(full_path.c_str(), F_OK | R_OK) == -1)
-//         return Err<Response, HttpStatus>(404);
-
-//     Response response;
-
-//     if (m_cgis.count(ext) > 0)
-//     {
-//         Result<std::string, HttpStatus> res = m_cgis[ext].process(full_path, req);
-//         if (res.is_err())
-//             return Err<Response, HttpStatus>(res.unwrap_err());
-
-//         return Response::from_cgi(200, res.unwrap());
-//     }
-//     else
-//     {
-//         File *file = new StreamFile(full_path);
-//         if (file->exists())
-//             return Response::ok(200, file);
-//         else
-//             return HttpStatus(404);
-//     }
-// }

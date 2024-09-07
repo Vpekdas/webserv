@@ -1,6 +1,8 @@
-#include "connection.hpp"
-#include "webserv.hpp"
 #include <netinet/in.h>
+#include <string.h>
+
+#include "connection.hpp"
+#include "logger.hpp"
 
 Connection::Connection()
 {

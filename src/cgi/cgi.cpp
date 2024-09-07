@@ -3,7 +3,6 @@
 #include "result.hpp"
 
 #include <cstdlib>
-#include <iostream>
 #include <sys/wait.h>
 #include <unistd.h>
 
@@ -92,7 +91,6 @@ Result<std::string, HttpStatus> CGI::process(std::string filepath, Request& req)
             str.append(buf, n);
 
         close(m_pipefds[0]);
-        close(m_pipefds[1]);
 
         if (n == -1)
             return Err<std::string, HttpStatus>(500);

@@ -1,6 +1,8 @@
+#include <netinet/in.h>
+
+#include "logger.hpp"
 #include "server.hpp"
 #include "webserv.hpp"
-#include <netinet/in.h>
 
 Server::Server() : m_sock_fd(-1)
 {

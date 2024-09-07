@@ -24,6 +24,7 @@ public:
     void send(int conn);
 
     HttpStatus status();
+    File *body();
 
     std::string encode_header();
 

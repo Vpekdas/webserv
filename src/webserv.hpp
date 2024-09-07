@@ -1,27 +1,20 @@
 #pragma once
 
-#include "colors.hpp"
-#include "config/config.hpp"
-#include "config/parser.hpp"
-#include "connection.hpp"
-#include "http/request.hpp"
-#include "http/response.hpp"
-#include "logger.hpp"
-#include "router.hpp"
-#include "server.hpp"
 #include <cerrno>
 #include <csignal>
 #include <cstdio>
 #include <cstring>
-#include <ios>
 #include <map>
 #include <netinet/in.h>
-#include <ostream>
 #include <string>
 #include <sys/epoll.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
+
+#include "config/config.hpp"
+#include "connection.hpp"
+#include "server.hpp"
 
 #define MAX_EVENTS 128
 #define READ_SIZE 512
@@ -57,4 +50,6 @@ private:
 
     Config m_config;
     std::map<int, Server> m_servers;
+
+    void poll_events();
 };
