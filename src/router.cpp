@@ -25,16 +25,21 @@ static const std::string source =
 "        <meta charset='UTF-8' />" SEP
 "        <meta name='viewport' content='width=device-width, initial-scale=1.0' />" SEP
 "        <link rel='stylesheet' href='/style.css' />"
-"Index of <b>#path</b>"
+"        <title>Index</title>"
 "    </head>" SEP
 "    <body>" SEP
         "<table>" SEP
-            "<tr>" SEP
-               "<td>Name</td>" SEP
-                "<td>Size</td>" SEP
-                "<td>Last Modified</td>" SEP
-            "</tr>" SEP
+            "<th>" SEP
+"		 <span>Index of #path</span>"
+                "<tr>"
+                    "<td><b>Name</b></td>" SEP
+                    "<td><b>Size</b></td>" SEP
+                    "<td><b>Last Modified</b></td>" SEP
+                "</tr>"
+            "</th>" SEP
+            "<tbody>"
                 "#replace" SEP
+            "</tbody>"
         "</table>" SEP
 "</body>" SEP
 "</html>" SEP;
@@ -73,11 +78,6 @@ Response Router::_directory_listing(Request& req, Location& loc, std::string pat
         {
             continue;
         }
-
-        // if (S_ISDIR(sb.st_mode))
-        // {
-        //     indexing += "/";
-        // }
 
         indexing += "'>";
         indexing += entry->d_name;
