@@ -74,3 +74,11 @@ inline std::string trim(std::string s)
 
     return s.substr(start, end);
 }
+
+inline void replace_all(std::string& src, std::string from, std::string to)
+{
+    size_t i;
+
+    while ((i = src.find(from)) != std::string::npos)
+        src.replace(i, from.size(), to);
+}

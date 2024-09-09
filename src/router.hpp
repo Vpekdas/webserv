@@ -26,4 +26,5 @@ private:
     ServerConfig m_config;
 
     Response _route_with_location(Request& req, Location& loc);
+    Response _directory_listing(Request& req, Location& loc, std::string path);
 };
