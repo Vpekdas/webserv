@@ -5,6 +5,8 @@
 - `POST`
 - `DELETE`
 - Upload files.
+- Handle HTTP redirection.
+- Host (server_name).
 
 # ERRORS
 

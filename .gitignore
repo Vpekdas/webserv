@@ -6,3 +6,6 @@ webserv
 *.log
 portfolio
 www/uploads
+
+target/
+Cargo.lock

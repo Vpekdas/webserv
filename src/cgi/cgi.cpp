@@ -43,7 +43,7 @@ Result<std::string, HttpStatus> CGI::process(std::string filepath, Request& req)
         // clang-format off
         const char *argv[] = {
             m_path.c_str(),
-            script_filename.c_str(),
+            filepath.c_str(),
             NULL
         };
 
@@ -54,8 +54,8 @@ Result<std::string, HttpStatus> CGI::process(std::string filepath, Request& req)
         const char *envp[] = {
             "GATEWAY_INTERFACE=GCI/1.1",
             script_filename.c_str(),
-            "QUERY_STRING=\"\"",
-            "REQUEST_METHOD=\"GET\"",
+            "QUERY_STRING=",
+            "REQUEST_METHOD=GET",
             "REDIRECT_STATUS=200",
             http_cookie.c_str(),
             http_user_agent.c_str(),

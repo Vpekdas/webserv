@@ -166,6 +166,8 @@ Response Router::_route_with_location(Request& req, Location& loc)
     else
         final_path = path;
 
+    ws::log << final_path << "\n";
+
     if (access(final_path.c_str(), F_OK | R_OK) == -1)
     {
         // FIXME: CONDITIONAL JUMP

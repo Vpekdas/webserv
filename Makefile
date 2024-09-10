@@ -125,7 +125,11 @@ define GET_G_GRADIENT
 $(word $(1),$(GRADIENT_G))
 endef
 
-all: $(NAME)
+all: $(NAME) sites/rust/index.rsc
+
+sites/rust/index.rsc:
+	cd rust && cargo build --release
+	cp rust/target/release/rust sites/rust/index.rsc
 
 $(NAME): $(OBJS)
 #	==================== draw progress bar ===================
@@ -199,7 +203,7 @@ $(OBJS_PATH)%.o: $(SRCS_PATH)%.cpp
 
 clean:
 	@printf "$(PURPLE)"
-	@$(RM) $(OBJS) $(OBJS_PATH)
+	@$(RM) $(OBJS) $(OBJS_PATH) sites/rust/index.rsc
 	@echo "[🧼] $(BYELLOW)Objects $(YELLOW)files have been cleaned from $(PROJECT_NAME) ✔️$(NC)\n"
 
 fclean: clean
