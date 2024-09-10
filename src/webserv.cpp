@@ -166,6 +166,7 @@ void Webserv::poll_events()
                 {
                     // TODO: Process the data.
                     conn.set_bytes_read(leftovers.size());
+                    std::cout << leftovers << "\n";
                 }
 
                 req_str.clear();
@@ -179,6 +180,7 @@ void Webserv::poll_events()
             else if (conn.waiting_for_body())
             {
                 conn.set_bytes_read(conn.bytes_read() + n);
+                std::cout << "test\n";
                 // TODO: Process the data.
             }
 

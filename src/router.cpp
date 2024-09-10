@@ -24,22 +24,51 @@ static const std::string source =
 "    <head>" SEP
 "        <meta charset='UTF-8' />" SEP
 "        <meta name='viewport' content='width=device-width, initial-scale=1.0' />" SEP
-"        <link rel='stylesheet' href='/style.css' />"
-"        <title>Index</title>"
+"        <title>Index of #path</title>" SEP
+"        <style>" SEP
+"body {" SEP
+"    background-color: #353535;" SEP
+"    font-family: sans-serif;" SEP
+"}" SEP
+"table {" SEP
+"    margin-top: 60px;" SEP
+"    margin-left: auto;" SEP
+"    margin-right: auto;" SEP
+"    background-color: #2b2a33;" SEP
+"    width: 50%;" SEP
+"    border: 1px solid black;" SEP
+"    border-radius: 10px;" SEP
+"}" SEP
+"td {" SEP
+"    color: white;" SEP
+"    text-align: center;" SEP
+"}" SEP
+"a:visited {" SEP
+"    color: #fba9fb;" SEP
+"}" SEP
+"a {" SEP
+"    color: #8181ea;" SEP
+"}" SEP
+"span {" SEP
+"    border-bottom: 1px solid grey;" SEP
+"    color: white;" SEP
+"	float: left;" SEP
+"}" SEP
+"        </style>"
 "    </head>" SEP
 "    <body>" SEP
         "<table>" SEP
             "<th>" SEP
-"		 <span>Index of #path</span>"
-                "<tr>"
+"		 <span>Index of #path</span>" SEP
+                "<tr>" SEP
                     "<td><b>Name</b></td>" SEP
                     "<td><b>Size</b></td>" SEP
                     "<td><b>Last Modified</b></td>" SEP
-                "</tr>"
+                "</tr>" SEP
             "</th>" SEP
-            "<tbody>"
+            "<tbody>" SEP
                 "#replace" SEP
-            "</tbody>"
+            "</tbody>" SEP
         "</table>" SEP
 "</body>" SEP
 "</html>" SEP;
@@ -70,6 +99,10 @@ Response Router::_directory_listing(Request& req, Location& loc, std::string pat
     {
         indexing += "<tr> <td> <a href='";
         indexing += loc.route().substr(1);
+
+        if (loc.route()[loc.route().size() - 1] != '/')
+            indexing += '/';
+
         indexing += entry->d_name;
 
         std::string filepath = path + "/" + entry->d_name;
@@ -122,7 +155,7 @@ Response Router::_route_with_location(Request& req, Location& loc)
     }
 
     if (n == 0)
-        return HttpStatus(405); // Method not allowed
+        return HTTP_ERROR(405); // Method not allowed
 
     struct stat sb;
     std::string path = loc.root() + "/" + req.path().substr(loc.route().size());
@@ -135,10 +168,11 @@ Response Router::_route_with_location(Request& req, Location& loc)
 
     if (access(final_path.c_str(), F_OK | R_OK) == -1)
     {
-        if (loc.indexing() && S_ISDIR(sb.st_mode))
+        // FIXME: CONDITIONAL JUMP
+        if (S_ISDIR(sb.st_mode) && loc.indexing())
             return _directory_listing(req, loc, path);
         else
-            return Response::httpcat(404);
+            return HTTP_ERROR(404);
     }
 
     std::string ext = final_path.substr(final_path.rfind('.') + 1);
@@ -174,10 +208,10 @@ Response Router::route(Request& req)
 
     for (std::vector<Location>::iterator it = m_config.locations().begin(); it != m_config.locations().end(); it++)
     {
-        Location location = *it;
+        Location& location = *it;
         if (path.find(location.route()) == 0)
             return _route_with_location(req, location);
     }
 
-    return HttpStatus(404);
+    return HTTP_ERROR(404);
 }

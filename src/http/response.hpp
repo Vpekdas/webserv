@@ -10,7 +10,6 @@ class Response
 {
 public:
     Response();
-    Response(HttpStatus status);
 
     static Response ok(HttpStatus status, File *file);
     static Response httpcat(HttpStatus status);
@@ -33,6 +32,8 @@ private:
     HttpStatus m_status;
     File *m_body;
     std::map<std::string, std::string> m_params;
+
+    Response(HttpStatus status);
 };
 
 #ifdef _DEBUG

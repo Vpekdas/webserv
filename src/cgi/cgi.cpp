@@ -41,7 +41,11 @@ Result<std::string, HttpStatus> CGI::process(std::string filepath, Request& req)
         std::string script_filename = "SCRIPT_FILENAME=" + filepath;
 
         // clang-format off
-        const char *argv[] = {m_path.c_str(), NULL};
+        const char *argv[] = {
+            m_path.c_str(),
+            script_filename.c_str(),
+            NULL
+        };
 
         // http://www.cgi101.com/book/ch3/text.html
         std::string http_cookie = "HTTP_COOKIE=" + req.cookies();

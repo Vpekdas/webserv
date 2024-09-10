@@ -7,9 +7,6 @@
 #include "http/status.hpp"
 #include "result.hpp"
 
-/*
-    A simple CGI which communicates with `STDINT` and `STDOUT`.
- */
 class CGI
 {
 public:

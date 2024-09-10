@@ -71,6 +71,7 @@ inline std::string trim(std::string s)
     for (end = s.size() - 1; end > 0 && std::isspace(s[end]); end--)
     {
     }
+    end++;
 
     return s.substr(start, end);
 }

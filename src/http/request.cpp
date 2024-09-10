@@ -21,21 +21,6 @@ bool Request::has_param(std::string key)
     return m_params.count(key) > 0;
 }
 
-std::vector<std::string> _split(const std::string& s, const std::string& delimiter)
-{
-    std::vector<std::string> parts;
-    size_t last = 0;
-    size_t next = 0;
-
-    while ((next = s.find(delimiter, last)) != std::string::npos)
-    {
-        parts.push_back(s.substr(last, next - last));
-        last = next + 1;
-    }
-    parts.push_back(s.substr(last));
-    return parts;
-}
-
 /*
     Extract parameters (eg `<url>?foo=bar&test=123`) from the path.
  */
@@ -46,7 +31,7 @@ void Request::_parse_path(std::string path)
         return;
 
     std::string args_str = path.substr(pos);
-    std::vector<std::string> args_vec = _split(args_str, "&");
+    std::vector<std::string> args_vec = split(args_str, "&");
 
     for (size_t i = 0; i < args_vec.size(); i++)
     {
@@ -67,14 +52,16 @@ Result<Request, int> Request::parse(std::string source)
 {
     size_t pos = source.find(SEP SEP);
     std::string header = source.substr(0, pos);
-    std::vector<std::string> lines = _split(header, SEP);
+    std::vector<std::string> lines = split(header, SEP);
+
+    std::cout << source << "\n";
 
     // We need at leat the `GET / HTTP/1.1`
 
     if (lines.size() == 0)
         return Err<Request, int>(0);
 
-    std::vector<std::string> request_line = _split(lines[0], " ");
+    std::vector<std::string> request_line = split(lines[0], " ");
 
     if (request_line.size() != 3)
         return Err<Request, int>(0);
@@ -98,7 +85,7 @@ Result<Request, int> Request::parse(std::string source)
         return Err<Request, int>(0);
 
     request.m_protocol = protocol;
-    request.m_path = path.substr(0, path.find("="));
+    request.m_path = path.substr(0, path.find("?"));
     request._parse_path(path);
 
     for (size_t i = 1; i < lines.size(); i++)
@@ -106,6 +93,8 @@ Result<Request, int> Request::parse(std::string source)
         size_t comma = lines[i].find(":");
         std::string key = trim(lines[i].substr(0, comma));
         std::string value = trim(lines[i].substr(comma + 1));
+
+        // std::cout << key << ": " << value << "\n";
 
         request.m_params[key] = value;
     }
