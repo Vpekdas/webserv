@@ -19,12 +19,6 @@
 #define MAX_EVENTS 128
 #define READ_SIZE 512
 
-enum Status
-{
-    SUCCESS = 0,
-    FAILURE = -1
-};
-
 class Webserv
 {
 public:
@@ -52,4 +46,7 @@ private:
     std::map<int, Server> m_servers;
 
     void poll_events();
+
+    bool has_server(struct sockaddr_in addr);
+    Server& get_server(struct sockaddr_in addr);
 };

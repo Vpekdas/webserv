@@ -11,3 +11,4 @@
 # ERRORS
 
 - Attempting to download a large file prevents the web server from shutting down properly.
+- Conditional Jump when trying to fetch /favicon.ico (Ctrl+Shift+R to reload the cache)

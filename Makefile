@@ -125,11 +125,11 @@ define GET_G_GRADIENT
 $(word $(1),$(GRADIENT_G))
 endef
 
-all: $(NAME) sites/rust/index.rsc
+all: $(NAME) sites/demo/rust/index.rsc
 
 sites/rust/index.rsc:
 	cd rust && cargo build --release
-	cp rust/target/release/rust sites/rust/index.rsc
+	cp rust/target/release/rust sites/demo/rust/index.rsc
 
 $(NAME): $(OBJS)
 #	==================== draw progress bar ===================

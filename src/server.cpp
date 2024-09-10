@@ -1,14 +1,14 @@
+#include <cstring>
 #include <netinet/in.h>
 
 #include "logger.hpp"
 #include "server.hpp"
-#include "webserv.hpp"
 
 Server::Server() : m_sock_fd(-1)
 {
 }
 
-Server::Server(ServerConfig config) : m_config(config), m_router(config)
+Server::Server(struct sockaddr_in addr) : m_addr(addr)
 {
     m_sock_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (m_sock_fd == -1)
@@ -17,21 +17,16 @@ Server::Server(ServerConfig config) : m_config(config), m_router(config)
     // By doing this, we can use the same port after relaunching the web server.
     // Without it, the port remains in use for a while.
     int b = true;
-    if (setsockopt(m_sock_fd, SOL_SOCKET, SO_REUSEPORT, &b, sizeof(int)) == FAILURE)
-        std::cerr << NRED << strerror(errno) << RED << ": setsockopt() failed." << RESET << std::endl;
+    if (setsockopt(m_sock_fd, SOL_SOCKET, SO_REUSEPORT, &b, sizeof(int)) == -1)
+        ws::log << ws::err << "setsockopt() failed: " << strerror(errno) << "\n";
 
-    // struct sockaddr_in addr;
-    // addr.sin_family = AF_INET;
-    // addr.sin_addr.s_addr = INADDR_ANY;
-    // addr.sin_port = htons(9999);
+    if (bind(m_sock_fd, (struct sockaddr *)&addr, sizeof(struct sockaddr_in)) == -1)
+        ws::log << ws::err << "bind() failed: " << strerror(errno) << "\n";
 
-    if (bind(m_sock_fd, (struct sockaddr *)&config.listen_addr(), sizeof(struct sockaddr_in)) == FAILURE)
-        std::cerr << NRED << strerror(errno) << RED << ": bind() failed." << RESET << std::endl;
+    if (listen(m_sock_fd, 42) == -1)
+        ws::log << ws::err << "listen() failed: " << strerror(errno) << "\n";
 
-    if (listen(m_sock_fd, 42) == FAILURE)
-        std::cerr << NRED << strerror(errno) << RED << ": listen() failed." << RESET << std::endl;
-
-    ws::log << ws::info << "Listening on port " << ntohs(config.listen_addr().sin_port) << "\n";
+    ws::log << ws::info << "Listening on port " << ntohs(addr.sin_port) << "\n";
 }
 
 Server::~Server()
@@ -41,14 +36,4 @@ Server::~Server()
 int Server::sock_fd()
 {
     return m_sock_fd;
-}
-
-ServerConfig& Server::config()
-{
-    return m_config;
-}
-
-Router& Server::router()
-{
-    return m_router;
 }
