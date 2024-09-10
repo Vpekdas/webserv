@@ -1,14 +1,18 @@
+#include <cstddef>
 #include <sstream>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <unistd.h>
 #include <vector>
 
 #include "file.hpp"
+#include "logger.hpp"
 #include "request.hpp"
 #include "response.hpp"
 #include "string.hpp"
 
 // clang-format off
+#ifndef _DEBUG
 static std::string source =
 "<!DOCTYPE html>" SEP
 "<html lang='en'>" SEP
@@ -37,6 +41,37 @@ static std::string source =
 "        <img src='https://http.cat/%{error}'>" SEP
 "    </body>" SEP
 "</html>" SEP;
+#else
+static std::string source =
+"<!DOCTYPE html>" SEP
+"<html lang='en'>" SEP
+"    <head>" SEP
+"        <meta charset='UTF-8'>" SEP
+"        <meta name='viewport' content='width=device-width, initial-scale=1.0'>" SEP
+"        <title>Error %{error}</title>" SEP
+"        <style>" SEP
+"            * {" SEP
+"                background-color: black;" SEP
+"            }" SEP
+"" SEP
+"            h1, h2, h3 {" SEP
+"                color: white;" SEP
+"                font-family: Verdana, Geneva, Tahoma, sans-serif;" SEP
+"            }" SEP
+"" SEP
+"            body {" SEP
+"                text-align: center;" SEP
+"            }" SEP
+"        </style>" SEP
+"    </head>" SEP
+"    <body>" SEP
+"        <h1>Oops, there seems to be an error !</h1>" SEP
+"        <h2>Here's a cat to make you feel better</h3>" SEP
+"        <h2 style='color: yellow;'>in %{func}() at <a style='color: yellow;' href='vscode://file/%{path}/%{file}:%{line}'>%{file}:%{line}</a></h2>" SEP
+"        <img src='https://http.cat/%{error}'>" SEP
+"    </body>" SEP
+"</html>" SEP;
+#endif
 // clang-format on
 
 Response::Response() : m_status(200), m_body(NULL)
@@ -115,6 +150,15 @@ std::string Response::encode_header()
 
 void Response::send(int conn)
 {
+    if (!m_body)
+    {
+        ws::log << ws::err << FILE_INFO << "Attempted to send a invalid response\n";
+        Response err = HTTP_ERROR(500); // Internal server error
+        err.send(conn);
+        delete err.m_body;
+        return;
+    }
+
     std::string header = encode_header();
 
     // TODO: Check errors (including SIGPIPE)
@@ -143,6 +187,29 @@ Response Response::httpcat(HttpStatus status)
     std::string content = source;
 
     _replace_all(content, "%{error}", to_string(status.code()));
+    response.m_body = new StringFile(content, "text/html");
+
+    response.add_param("Content-Type", "text/html");
+    response.add_param("Content-Length", to_string(response.m_body->file_size()));
+
+    return response;
+}
+
+Response Response::http_error(HttpStatus status, const char *func, const char *file, int line)
+{
+    Response response(status);
+    std::string content = source;
+
+    replace_all(content, "%{error}", to_string(status.code()));
+    replace_all(content, "%{func}", func);
+    replace_all(content, "%{file}", file);
+    replace_all(content, "%{line}", to_string(line));
+
+    char buf[64];
+
+    getcwd(buf, 64);
+    replace_all(content, "%{path}", buf);
+
     response.m_body = new StringFile(content, "text/html");
 
     response.add_param("Content-Type", "text/html");

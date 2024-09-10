@@ -75,3 +75,5 @@ const std::string dbg = "[" NBLUE "DEBUG" RESET "] ";
 
 extern Logger log;
 } // namespace ws
+
+#define FILE_INFO YELLOW << __FILE__ << ":" << __LINE__ << RESET << " - "

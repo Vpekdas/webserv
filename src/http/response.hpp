@@ -14,6 +14,7 @@ public:
 
     static Response ok(HttpStatus status, File *file);
     static Response httpcat(HttpStatus status);
+    static Response http_error(HttpStatus status, const char *func, const char *file, int line);
 
     /*
         CGIs will starts the response with a few headers value, but without the first line.
@@ -33,3 +34,9 @@ private:
     File *m_body;
     std::map<std::string, std::string> m_params;
 };
+
+#ifdef _DEBUG
+#define HTTP_ERROR(CODE) Response::http_error(CODE, __FUNCTION__, __FILE__, __LINE__)
+#else
+#define HTTP_ERROR(CODE) Response::httpcat(CODE)
+#endif
