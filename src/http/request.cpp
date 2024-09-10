@@ -6,9 +6,6 @@
 
 Request::Request()
 {
-    (void)m_method;
-    (void)m_protocol;
-    (void)m_body;
 }
 
 std::string& Request::get_param(std::string key)
@@ -56,7 +53,7 @@ Result<Request, int> Request::parse(std::string source)
 
     std::cout << source << "\n";
 
-    // We need at leat the `GET / HTTP/1.1`
+    // We need at least the `GET / HTTP/1.1`
 
     if (lines.size() == 0)
         return Err<Request, int>(0);
@@ -68,7 +65,7 @@ Result<Request, int> Request::parse(std::string source)
 
     std::string method = request_line[0];
     std::string path = request_line[1];
-    std::string protocol = request_line[2]; // HTTP/2.x works differently than HTTP/1.x so this should be checked for
+    std::string protocol = request_line[2]; // TODO: Refuse HTTP > 1.1
 
     Request request;
     request.m_header_size = pos + 4; // "\r\n\r\n"
@@ -93,8 +90,6 @@ Result<Request, int> Request::parse(std::string source)
         size_t comma = lines[i].find(":");
         std::string key = trim(lines[i].substr(0, comma));
         std::string value = trim(lines[i].substr(comma + 1));
-
-        // std::cout << key << ": " << value << "\n";
 
         request.m_params[key] = value;
     }

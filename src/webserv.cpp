@@ -214,12 +214,12 @@ void Webserv::poll_events()
 
             if (!response.status().is_error())
             {
-                ws::log << ws::info << "GET `" << req.path() << "` -> " << NGREEN << response.status().code() << " "
-                        << response.status() << RESET << "\n";
+                ws::log << ws::info << strmethod(req.method()) << " `" << req.path() << "` -> " << NGREEN
+                        << response.status().code() << " " << response.status() << RESET << "\n";
             }
             else
-                ws::log << ws::info << "GET `" << req.path() << "` -> " << NRED << response.status().code() << " "
-                        << response.status() << RESET << "\n";
+                ws::log << ws::info << strmethod(req.method()) << " `" << req.path() << "` -> " << NRED
+                        << response.status().code() << " " << response.status() << RESET << "\n";
 
             response.send(events[i].data.fd);
             delete response.body();

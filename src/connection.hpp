@@ -62,4 +62,7 @@ private:
 
     Request m_req;
     size_t m_bytes_read;
+
+    // TODO: Remove this!
+    std::string m_body_str;
 };

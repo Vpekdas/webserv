@@ -15,6 +15,21 @@ enum Method
     HEAD
 };
 
+inline const char *strmethod(Method method)
+{
+    switch (method)
+    {
+    case GET:
+        return "GET";
+    case HEAD:
+        return "HEAD";
+    case DELETE:
+        return "DELETE";
+    case POST:
+        return "POST";
+    }
+}
+
 class Request
 {
 public:
@@ -76,7 +91,6 @@ private:
     std::map<std::string, std::string> m_params;
     std::string m_protocol;
     std::map<std::string, std::string> m_args;
-    std::string m_body;
 
     size_t m_header_size;
 
