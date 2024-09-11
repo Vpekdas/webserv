@@ -54,6 +54,7 @@ Result<std::string, HttpStatus> CGI::process(std::string filepath, Request& req)
 
         std::vector<const char *> envp;
         envp.push_back("GATEWAY_INTERFACE=GCI/1.1");
+        envp.push_back("REDIRECT_STATUS=200");
 
         std::string request_method = "REQUEST_METHOD=" + std::string(strmethod(req.method()));
         std::string http_cookie = "HTTP_COOKIE=" + req.cookies();

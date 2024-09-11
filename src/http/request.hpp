@@ -60,6 +60,11 @@ public:
         return m_params.count("Content-Length") > 0 ? std::atoi(m_params["Content-Length"].c_str()) : (size_t)-1;
     }
 
+    std::string content_type()
+    {
+        return m_params.count("Content-Type") > 0 ? m_params["Content-Type"].c_str() : "";
+    }
+
     std::string& cookies()
     {
         return get_param("Cookie");

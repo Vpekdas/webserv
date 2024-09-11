@@ -174,7 +174,7 @@ void Webserv::poll_events()
             // parameters.
             if (!conn.waiting_for_body() && std::strstr(buf, SEP SEP))
             {
-                std::cout << "Invalid request:\n" << req_str << "\n";
+                std::cout << req_str << "\n";
                 Request req = Request::parse(req_str).unwrap();
                 conn.set_last_request(req);
 
@@ -209,7 +209,9 @@ void Webserv::poll_events()
             Connection& conn = m_connections[events[i].data.fd];
 
             Request req = conn.last_request();
-            req.set_args(conn.req_str());
+
+            if (req.method() == POST && req.content_type() == "application/x-www-form-urlencoded")
+                req.set_args(conn.req_str());
 
             conn.req_str().clear();
 
