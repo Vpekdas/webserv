@@ -23,16 +23,12 @@ bool Request::has_param(std::string key)
  */
 void Request::_parse_path(std::string path)
 {
-    size_t pos = path.find("?");
-    if (pos == std::string::npos)
-        return;
-
-    std::string args_str = path.substr(pos);
+    std::string args_str = path;
     std::vector<std::string> args_vec = split(args_str, "&");
 
     for (size_t i = 0; i < args_vec.size(); i++)
     {
-        pos = args_vec[i].find("=");
+        size_t pos = args_vec[i].find("=");
         std::string key = args_vec[i].substr(0, pos);
         std::string value;
 
@@ -51,7 +47,7 @@ Result<Request, int> Request::parse(std::string source)
     std::string header = source.substr(0, pos);
     std::vector<std::string> lines = split(header, SEP);
 
-    std::cout << source << "\n";
+    // std::cout << source << "\n";
 
     // We need at least the `GET / HTTP/1.1`
 
@@ -83,7 +79,7 @@ Result<Request, int> Request::parse(std::string source)
 
     request.m_protocol = protocol;
     request.m_path = path.substr(0, path.find("?"));
-    request._parse_path(path);
+    request._parse_path(path.substr(1));
 
     for (size_t i = 1; i < lines.size(); i++)
     {
@@ -95,4 +91,25 @@ Result<Request, int> Request::parse(std::string source)
     }
 
     return request;
+}
+
+void Request::set_args(std::string param)
+{
+    _parse_path(param);
+}
+
+std::string Request::args_str()
+{
+    std::string s = "";
+
+    for (std::map<std::string, std::string>::iterator it = m_args.begin(); it != m_args.end(); it++)
+    {
+        s += it->first + "=" + it->second;
+        std::map<std::string, std::string>::iterator it2 = it;
+        it2++;
+        if (it2 != m_args.end())
+            s += "&";
+    }
+
+    return s;
 }

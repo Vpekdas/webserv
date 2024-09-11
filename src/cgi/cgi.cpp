@@ -1,10 +1,12 @@
 #include "cgi.hpp"
 #include "http/request.hpp"
 #include "result.hpp"
+#include "string.hpp"
 
 #include <cstdlib>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <vector>
 
 CGI::CGI()
 {
@@ -47,25 +49,39 @@ Result<std::string, HttpStatus> CGI::process(std::string filepath, Request& req)
             NULL
         };
 
-        // http://www.cgi101.com/book/ch3/text.html
+        // RFC describing Common Gateway Interface
+        // https://www.ietf.org/rfc/rfc3875.txt
+
+        std::vector<const char *> envp;
+        envp.push_back("GATEWAY_INTERFACE=GCI/1.1");
+
+        std::string request_method = "REQUEST_METHOD=" + std::string(strmethod(req.method()));
         std::string http_cookie = "HTTP_COOKIE=" + req.cookies();
         std::string http_user_agent = "HTTP_USER_AGENT=" + req.user_agent();
 
-        const char *envp[] = {
-            "GATEWAY_INTERFACE=GCI/1.1",
-            script_filename.c_str(),
-            "QUERY_STRING=",
-            "REQUEST_METHOD=GET",
-            "REDIRECT_STATUS=200",
-            http_cookie.c_str(),
-            http_user_agent.c_str(),
-            NULL
-        };
+        envp.push_back(request_method.c_str());
+        envp.push_back(http_cookie.c_str());
+        envp.push_back(http_user_agent.c_str());
+
+        if (req.method() == POST)
+        {
+            std::string content_length = "CONTENT_LENGTH=" + req.get_param("Content-Length");
+            std::string content_type = "CONTENT_TYPE=" + req.get_param("Content-Type");
+            envp.push_back(content_length.c_str());
+            envp.push_back(content_type.c_str());
+        }
+        else
+        {
+            std::string query_string = "QUERY_STRING=" + req.args_str();
+            envp.push_back(query_string.c_str());
+        }
+
+        envp.push_back(NULL);
         // clang-format on
 
         // TODO: maybe use chdir here.
 
-        if (execve(m_path.c_str(), (char **)argv, (char **)envp) == -1)
+        if (execve(m_path.c_str(), (char **)argv, (char **)envp.data()) == -1)
         {
             close(m_pipefds[0]);
             close(m_pipefds[1]);

@@ -23,11 +23,6 @@ int Connection::fd() const
     return m_fd;
 }
 
-std::string& Connection::getReqStr()
-{
-    return m_reqStr;
-}
-
 Request& Connection::last_request()
 {
     return m_req;

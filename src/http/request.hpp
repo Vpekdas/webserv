@@ -85,11 +85,17 @@ public:
         return m_header_size;
     }
 
+    void set_args(std::string param);
+    std::string args_str();
+
 private:
     Method m_method;
     std::string m_path;
     std::map<std::string, std::string> m_params;
     std::string m_protocol;
+    /*
+        Request arguments: `?page=1&foo=bar`
+     */
     std::map<std::string, std::string> m_args;
 
     size_t m_header_size;

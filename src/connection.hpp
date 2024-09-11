@@ -45,7 +45,15 @@ public:
         m_body = b;
     }
 
-    std::string& getReqStr();
+    std::string& req_str()
+    {
+        return m_reqStr;
+    }
+
+    void set_req_str(std::string s)
+    {
+        m_reqStr = s;
+    }
 
     void set_epollin(int epoll_fd);
     void set_epollout(int epoll_fd);
@@ -62,7 +70,4 @@ private:
 
     Request m_req;
     size_t m_bytes_read;
-
-    // TODO: Remove this!
-    std::string m_body_str;
 };

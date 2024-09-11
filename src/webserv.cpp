@@ -155,7 +155,7 @@ void Webserv::poll_events()
             char buf[READ_SIZE + 1];
 
             Connection& conn = m_connections[events[i].data.fd];
-            std::string& req_str = conn.getReqStr();
+            std::string& req_str = conn.req_str();
 
             n = recv(events[i].data.fd, buf, READ_SIZE, 0);
             buf[n] = '\0';
@@ -174,17 +174,18 @@ void Webserv::poll_events()
             // parameters.
             if (!conn.waiting_for_body() && std::strstr(buf, SEP SEP))
             {
+                std::cout << "Invalid request:\n" << req_str << "\n";
                 Request req = Request::parse(req_str).unwrap();
                 conn.set_last_request(req);
 
                 std::string leftovers = req_str.substr(req.header_size());
+                req_str.clear();
                 if (!leftovers.empty())
                 {
                     // TODO: Process the data.
                     conn.set_bytes_read(leftovers.size());
+                    conn.set_req_str(leftovers);
                 }
-
-                req_str.clear();
 
                 if (!req.has_param("Content-Length"))
                 {
@@ -194,8 +195,9 @@ void Webserv::poll_events()
             }
             else if (conn.waiting_for_body())
             {
-                conn.set_bytes_read(conn.bytes_read() + n);
                 // TODO: Process the data.
+                conn.set_bytes_read(conn.bytes_read() + n);
+                conn.req_str().append(buf, n);
             }
 
             if (n < READ_SIZE || (n == READ_SIZE && conn.bytes_read() > conn.last_request().content_length()))
@@ -207,16 +209,21 @@ void Webserv::poll_events()
             Connection& conn = m_connections[events[i].data.fd];
 
             Request req = conn.last_request();
+            req.set_args(conn.req_str());
+
+            conn.req_str().clear();
+
             Response response;
 
-            /*if (!req.has_param("Content-Length"))
+            // In our case only `POST` requests have a body. Other requests will not set a `Content-Length`.
+            // TODO: `Content-Type` must also be set for `POST`
+            if (req.method() == POST && !req.has_param("Content-Length"))
             {
-                response = Response::httpcat(411); // Length required
+                response = HTTP_ERROR(411); // Length required
             }
-            else */
-            if (conn.bytes_read() > req.content_length())
+            else if (conn.bytes_read() > req.content_length())
             {
-                response = Response::httpcat(413); // Payload too large
+                response = HTTP_ERROR(413); // Payload too large
             }
             else
             {
