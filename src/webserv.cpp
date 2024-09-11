@@ -212,11 +212,23 @@ void Webserv::poll_events()
 
             if (req.method() == POST && req.content_type() == "application/x-www-form-urlencoded")
                 req.set_args(conn.req_str());
+            else if (req.method() == POST && req.content_type() == "multipart/form-data")
+                req.set_args(conn.req_str());
+
+            std::string req_str = conn.req_str();
+            size_t pos = req_str.find(SEP SEP);
+            std::string body = req_str.substr(pos + 4);
+
+            std::ofstream file("test.png", std::ios::binary);
+            if (file.is_open())
+            {
+                file.write(body.c_str(), body.size());
+                file.close();
+            }
 
             conn.req_str().clear();
 
             Response response;
-
             // In our case only `POST` requests have a body. Other requests will not set a `Content-Length`.
             // TODO: `Content-Type` must also be set for `POST`
             if (req.method() == POST && !req.has_param("Content-Length"))
