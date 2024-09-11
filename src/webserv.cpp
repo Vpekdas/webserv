@@ -86,8 +86,6 @@ void Webserv::eventLoop()
         {
             Server& server = get_server(config.listen_addr());
             server.add_host(host, config);
-
-            ws::log << ws::dbg << "Adding new host " BIWHITE << host << RESET " to the server\n";
         }
         else
         {
@@ -99,11 +97,15 @@ void Webserv::eventLoop()
             socket_event.data.fd = server.sock_fd();
 
             if (epoll_ctl(m_epollFd, EPOLL_CTL_ADD, server.sock_fd(), &socket_event) == -1)
+            {
                 std::cerr << NRED << strerror(errno) << RED << ": epoll_ctl() failed." << RESET << std::endl;
+                continue;
+            }
 
-            ws::log << ws::dbg << "Creating new server with host " BIWHITE << host << RESET "\n";
             m_servers[server.sock_fd()] = server;
         }
+
+        ws::log << ws::info << "Host " BIWHITE << host << RESET " listening on " << config.listen_addr() << "\n";
     }
 
     while (m_running)

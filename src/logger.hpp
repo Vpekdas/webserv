@@ -3,6 +3,7 @@
 #include <cctype>
 #include <fstream>
 #include <iostream>
+#include <netinet/in.h>
 
 #include "colors.hpp"
 
@@ -77,3 +78,14 @@ extern Logger log;
 } // namespace ws
 
 #define FILE_INFO YELLOW << __FILE__ << ":" << __LINE__ << RESET << " - "
+
+inline ws::Logger& operator<<(ws::Logger& os, struct sockaddr_in& sock)
+{
+    os << ((sock.sin_addr.s_addr >> 24) & 0xFF) << ".";
+    os << ((sock.sin_addr.s_addr >> 16) & 0xFF) << ".";
+    os << ((sock.sin_addr.s_addr >> 8) & 0xFF) << ".";
+    os << ((sock.sin_addr.s_addr) & 0xFF);
+    os << ":";
+    os << htons(sock.sin_port);
+    return os;
+}

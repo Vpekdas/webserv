@@ -1,6 +1,8 @@
 #pragma once
 
 #include <ios>
+#include <netinet/in.h>
+#include <ostream>
 #include <sstream>
 #include <string>
 #include <vector>

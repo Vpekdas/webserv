@@ -25,8 +25,6 @@ Server::Server(struct sockaddr_in addr) : m_addr(addr)
 
     if (listen(m_sock_fd, 42) == -1)
         ws::log << ws::err << "listen() failed: " << strerror(errno) << "\n";
-
-    ws::log << ws::info << "Listening on port " << ntohs(addr.sin_port) << "\n";
 }
 
 Server::~Server()
