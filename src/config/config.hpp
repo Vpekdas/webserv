@@ -7,6 +7,7 @@
 
 #include "config/parser.hpp"
 #include "http/request.hpp"
+#include "option.hpp"
 
 class Location
 {
@@ -54,6 +55,11 @@ public:
         return m_upload_directory;
     }
 
+    Option<std::string>& redirect()
+    {
+        return m_redirect;
+    }
+
 private:
     std::string m_route;
 
@@ -64,6 +70,8 @@ private:
     std::string m_default;
     std::map<std::string, std::string> m_cgis;
     std::string m_upload_directory;
+
+    Option<std::string> m_redirect;
 };
 
 class ServerConfig

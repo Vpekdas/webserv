@@ -1,12 +1,13 @@
 #pragma once
 
 #include <exception>
+#include <stdexcept>
 
 /*
     Implementation of Rust's and C++20's `Option` type in C++98.
  */
 
-template<typename T>
+template <typename T>
 class Option
 {
 public:
@@ -20,19 +21,22 @@ public:
 
     T unwrap()
     {
-        if (is_none()) throw new std::exception;
+        if (is_none())
+            throw new std::runtime_error("Called `Option::unwrap` on None");
         return m_value;
     }
 
     T unwrap_or(T other)
     {
-        if (is_none()) return other;
+        if (is_none())
+            return other;
         return m_value;
     }
 
     T unwrap_or_default()
     {
-        if (is_none()) return T();
+        if (is_none())
+            return T();
         return m_value;
     }
 
@@ -51,13 +55,13 @@ private:
     bool m_some;
 };
 
-template<typename T>
+template <typename T>
 Option<T> None()
 {
     return Option<T>();
 }
 
-template<typename T>
+template <typename T>
 Option<T> Some(T value)
 {
     return Option<T>(value);

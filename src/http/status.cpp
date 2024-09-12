@@ -27,6 +27,12 @@ std::ostream& operator<<(std::ostream& os, HttpStatus const& error)
     case 200:
         os << "OK";
         break;
+    case 301:
+        os << "Moved Permanently";
+        break;
+    case 308:
+        os << "Permanent Redirect";
+        break;
     case 403:
         os << "Forbidden";
         break;

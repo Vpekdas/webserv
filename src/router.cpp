@@ -84,8 +84,6 @@ Response Router::_directory_listing(Request& req, Location& loc, std::string& pa
 {
     DIR *dir;
     struct dirent *entry;
-    (void)req;
-    (void)loc;
 
     if ((dir = opendir(path.c_str())) == NULL)
     {
@@ -146,6 +144,27 @@ Response Router::_directory_listing(Request& req, Location& loc, std::string& pa
 
 Response Router::_route_with_location(Request& req, Location& loc, std::string& req_str)
 {
+    // THIS IS BROKEN (ALSO FUCK BROWSER CACHE)
+
+    Option<std::string> res = loc.redirect();
+    if (res.is_some())
+    {
+        HttpStatus code;
+
+        if (req.method() == GET || req.method() == HEAD)
+        {
+            code = 301;
+        }
+        else if (req.method() == POST)
+        {
+            code = 308;
+        }
+
+        Response response = Response::ok(code, new StringFile("", ""));
+        response.add_param("Location", res.unwrap());
+        return response;
+    }
+
     size_t n = 0;
     for (std::vector<Method>::iterator it = loc.methods().begin(); it != loc.methods().end(); it++)
     {
@@ -163,7 +182,10 @@ Response Router::_route_with_location(Request& req, Location& loc, std::string& 
     std::string path = loc.root() + "/" + req.path().substr(loc.route().size());
     std::string final_path;
 
-    if (stat(path.c_str(), &sb) != -1 && S_ISDIR(sb.st_mode))
+    if (stat(path.c_str(), &sb) == -1)
+        return HTTP_ERROR(404);
+
+    if (S_ISDIR(sb.st_mode))
         final_path = path + "/" + loc.default_page();
     else
         final_path = path;
@@ -173,7 +195,6 @@ Response Router::_route_with_location(Request& req, Location& loc, std::string& 
 
     if (access(final_path.c_str(), F_OK | R_OK) == -1)
     {
-        // FIXME: CONDITIONAL JUMP
         if (S_ISDIR(sb.st_mode) && loc.indexing())
             return _directory_listing(req, loc, path);
         else
@@ -265,12 +286,23 @@ Response Router::route(Request& req, std::string& req_str)
 {
     std::string path = req.path();
 
+    if (m_config.locations().size() == 0)
+        return HTTP_ERROR(404);
+
+    Location& best_match_loc = m_config.locations()[0];
+    size_t best_match = best_match_loc.route().size();
+
     for (std::vector<Location>::iterator it = m_config.locations().begin(); it != m_config.locations().end(); it++)
     {
         Location& location = *it;
-        if (path.find(location.route()) == 0)
-            return _route_with_location(req, location, req_str);
+        if (path.find(location.route()) == 0 && location.route().size() > best_match)
+        {
+            best_match = location.route().size();
+            best_match_loc = location;
+        }
     }
 
+    if (path.find(best_match_loc.route()) == 0)
+        return _route_with_location(req, best_match_loc, req_str);
     return HTTP_ERROR(404);
 }

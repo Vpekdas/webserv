@@ -131,9 +131,13 @@ Result<int, ConfigError> Location::deserialize(ConfigEntry& from)
         {
             m_upload_directory = entry.args()[1].str();
         }
+        else if (name == "redirect" && entry.args().size() == 2 && entry.args()[1].type() == TOKEN_STRING)
+        {
+            m_redirect = Some(entry.args()[1].str());
+        }
         else
         {
-            std::string entries[] = {"methods", "root", "index", "default", "cgi", "upload_dir"};
+            std::string entries[] = {"methods", "root", "index", "default", "cgi", "upload_dir", "redirect"};
             return ConfigError::unknown_entry(entry.source(), token_name,
                                               _array_to_vec(entries, sizeof(entries) / sizeof(std::string)));
         }

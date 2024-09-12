@@ -90,7 +90,7 @@ Result<std::string, HttpStatus> CGI::process(std::string filepath, Request& req)
             close(m_pipefds[0]);
             close(m_pipefds[1]);
         }
-        exit(0);
+        exit(1);
     }
     else
     {
@@ -98,8 +98,10 @@ Result<std::string, HttpStatus> CGI::process(std::string filepath, Request& req)
 
         int stat_loc;
         pid_t pid;
-        while ((pid = wait(&stat_loc)) > 0)
+        while ((pid = waitpid(-1, &stat_loc, WNOHANG)) > 0)
             ;
+
+        std::cout << WEXITSTATUS(stat_loc) << ", pid = " << pid << ", error = " << strerror(errno) << "\n";
 
         if (pid == -1 || WEXITSTATUS(stat_loc) != 0)
             return Err<std::string, HttpStatus>(500);
