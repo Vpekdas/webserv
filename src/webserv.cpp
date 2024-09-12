@@ -61,8 +61,6 @@ Result<Connection, int> Webserv::acceptConnection(int sock_fd)
         return -1;
     }
 
-    std::cout << "fd = " << conn << "\n";
-
     struct epoll_event event;
     event.events = EPOLLIN | EPOLLRDHUP | EPOLLHUP | EPOLLERR;
     event.data.fd = conn;
@@ -174,7 +172,6 @@ void Webserv::poll_events()
             // parameters.
             if (!conn.waiting_for_body() && std::strstr(buf, SEP SEP))
             {
-                std::cout << req_str << "\n";
                 Request req = Request::parse(req_str).unwrap();
                 conn.set_last_request(req);
 
@@ -212,21 +209,8 @@ void Webserv::poll_events()
 
             if (req.method() == POST && req.content_type() == "application/x-www-form-urlencoded")
                 req.set_args(conn.req_str());
-            else if (req.method() == POST && req.content_type() == "multipart/form-data")
-                req.set_args(conn.req_str());
-
-            std::string req_str = conn.req_str();
-            size_t pos = req_str.find(SEP SEP);
-            std::string body = req_str.substr(pos + 4);
-
-            std::ofstream file("test.png", std::ios::binary);
-            if (file.is_open())
-            {
-                file.write(body.c_str(), body.size());
-                file.close();
-            }
-
-            conn.req_str().clear();
+            // else if (req.method() == POST && req.content_type() == "multipart/form-data")
+            //     req.set_args(conn.req_str());
 
             Response response;
             // In our case only `POST` requests have a body. Other requests will not set a `Content-Length`.
@@ -243,18 +227,20 @@ void Webserv::poll_events()
             {
                 if (!req.has_param("Host"))
                 {
-                    response = m_servers[conn.sock_fd()].default_host().router().route(req);
+                    response = m_servers[conn.sock_fd()].default_host().router().route(req, conn.req_str());
                 }
                 else
                 {
                     // TODO: Check if the port is the same as the listen port I supposed
                     std::string host = req.get_param("Host").substr(0, req.get_param("Host").find(':'));
                     if (m_servers[conn.sock_fd()].has_host(host))
-                        response = m_servers[conn.sock_fd()].host(host).router().route(req);
+                        response = m_servers[conn.sock_fd()].host(host).router().route(req, conn.req_str());
                     else
-                        response = m_servers[conn.sock_fd()].default_host().router().route(req);
+                        response = m_servers[conn.sock_fd()].default_host().router().route(req, conn.req_str());
                 }
             }
+
+            conn.req_str().clear();
 
             if (req.is_keep_alive())
                 response.add_param("Connection", "keep-alive");

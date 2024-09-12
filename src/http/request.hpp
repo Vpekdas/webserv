@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <map>
 #include <string>
+#include <vector>
 
 #define SEP "\r\n"
 
@@ -34,6 +35,11 @@ class Request
 {
 public:
     static Result<Request, int> parse(std::string body);
+
+    /*
+        Parse a request from a multipart/form-data
+     */
+    static Result<Request, int> parse_part(std::string header);
 
     Request();
 
@@ -106,4 +112,5 @@ private:
     size_t m_header_size;
 
     void _parse_path(std::string path);
+    void _parse_params(std::vector<std::string>& lines, size_t i = 1, bool ignore_invalid = false);
 };

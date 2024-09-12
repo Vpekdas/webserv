@@ -41,6 +41,19 @@ void Request::_parse_path(std::string path)
     }
 }
 
+void Request::_parse_params(std::vector<std::string>& lines, size_t i, bool ignore_invalid)
+{
+    (void)ignore_invalid;
+    for (; i < lines.size(); i++)
+    {
+        size_t comma = lines[i].find(":");
+        std::string key = trim(lines[i].substr(0, comma));
+        std::string value = trim(lines[i].substr(comma + 1));
+
+        m_params[key] = value;
+    }
+}
+
 Result<Request, int> Request::parse(std::string source)
 {
     size_t pos = source.find(SEP SEP);
@@ -81,16 +94,18 @@ Result<Request, int> Request::parse(std::string source)
     request.m_path = path.substr(0, path.find("?"));
     request._parse_path(path.substr(1));
 
-    for (size_t i = 1; i < lines.size(); i++)
-    {
-        size_t comma = lines[i].find(":");
-        std::string key = trim(lines[i].substr(0, comma));
-        std::string value = trim(lines[i].substr(comma + 1));
-
-        request.m_params[key] = value;
-    }
+    request._parse_params(lines);
 
     return request;
+}
+
+Result<Request, int> Request::parse_part(std::string header)
+{
+    std::vector<std::string> lines = split(header, "\r\n");
+
+    Request req;
+    req._parse_params(lines);
+    return req;
 }
 
 void Request::set_args(std::string param)

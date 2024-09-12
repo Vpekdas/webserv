@@ -48,7 +48,6 @@ public:
 
     bool has_host(std::string& host)
     {
-        std::cout << host << ", " << m_hosts.count(host) << "\n";
         return m_hosts.count(host) > 0;
     }
 

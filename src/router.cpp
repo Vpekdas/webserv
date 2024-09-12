@@ -1,3 +1,4 @@
+#include <iostream>
 #include <map>
 #include <string>
 #include <sys/stat.h>
@@ -142,7 +143,7 @@ Response Router::_directory_listing(Request& req, Location& loc, std::string pat
     return Response::ok(200, new StringFile(source2, File::mime_from_ext("html")));
 }
 
-Response Router::_route_with_location(Request& req, Location& loc)
+Response Router::_route_with_location(Request& req, Location& loc, std::string& req_str)
 {
     size_t n = 0;
     for (std::vector<Method>::iterator it = loc.methods().begin(); it != loc.methods().end(); it++)
@@ -166,8 +167,6 @@ Response Router::_route_with_location(Request& req, Location& loc)
     else
         final_path = path;
 
-    ws::log << final_path << "\n";
-
     if (access(final_path.c_str(), F_OK | R_OK) == -1)
     {
         // FIXME: CONDITIONAL JUMP
@@ -189,6 +188,47 @@ Response Router::_route_with_location(Request& req, Location& loc)
         }
     }
 
+    if (req.method() == POST && req.get_param("Content-Type").find("multipart/form-data") == 0)
+    {
+        size_t pos = req_str.find(SEP SEP);
+
+        std::string header;
+        std::string body;
+
+        if (pos == std::string::npos)
+        {
+            header = req_str;
+        }
+        else
+        {
+            header = req_str.substr(0, pos + 2);
+            body = req_str.substr(pos + 4);
+        }
+
+        Request part_req = Request::parse_part(header).unwrap();
+
+        // TODO: Maybe try to protect the find below ?
+        int fileNamePos = header.find("filename=") + 10;
+        std::string fileName;
+
+        while (header[fileNamePos] && header[fileNamePos] != '"')
+        {
+            fileName += header[fileNamePos];
+            fileNamePos++;
+        }
+
+        std::ofstream file((loc.upload_dir() + "/" + fileName).c_str(), std::ios::binary);
+        if (file.is_open())
+        {
+            file.write(body.c_str(), body.size());
+            file.close();
+        }
+        else
+        {
+            std::cout << CYAN << "cannot open file" << RESET << std::endl;
+        }
+    }
+
     if (n > 0)
     {
         CGI cgi(loc.cgis()[ext]);
@@ -204,7 +244,7 @@ Response Router::_route_with_location(Request& req, Location& loc)
     }
 }
 
-Response Router::route(Request& req)
+Response Router::route(Request& req, std::string& req_str)
 {
     std::string path = req.path();
 
@@ -212,7 +252,7 @@ Response Router::route(Request& req)
     {
         Location& location = *it;
         if (path.find(location.route()) == 0)
-            return _route_with_location(req, location);
+            return _route_with_location(req, location, req_str);
     }
 
     return HTTP_ERROR(404);
