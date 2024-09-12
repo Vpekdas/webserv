@@ -1,11 +1,10 @@
 # TODOS
 
 - `Content-Length` must be set in the header or else we dont read anything.
-- `Transfer-Encoding: chunked` indicate chuncked request
 - `POST`
-- `DELETE`
-- Upload files.
 - Handle HTTP redirection.
+- Add CGI timeout error
+- Add connection timeout
 
 # ERRORS
 
@@ -15,3 +14,4 @@
 - Payload to large error does not trigger on file upload
 - Weird bug when uploading file
 - Segfault when trying to use DELETE with a form
+<!-- - `411 Length required` on DELETE request -->
