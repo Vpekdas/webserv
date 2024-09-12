@@ -1,9 +1,10 @@
 #include "cgi.hpp"
 #include "http/request.hpp"
 #include "result.hpp"
-#include "string.hpp"
+#include "webserv.hpp"
 
 #include <cstdlib>
+#include <cstring>
 #include <sys/wait.h>
 #include <unistd.h>
 #include <vector>
@@ -22,6 +23,8 @@ Result<std::string, HttpStatus> CGI::process(std::string filepath, Request& req)
 {
     if (pipe(m_pipefds) == -1)
         return Err<std::string, HttpStatus>(500);
+
+    m_start_time = time();
 
     m_pid = fork();
     if (m_pid == -1)
@@ -60,21 +63,21 @@ Result<std::string, HttpStatus> CGI::process(std::string filepath, Request& req)
         std::string http_cookie = "HTTP_COOKIE=" + req.cookies();
         std::string http_user_agent = "HTTP_USER_AGENT=" + req.user_agent();
 
-        envp.push_back(request_method.c_str());
-        envp.push_back(http_cookie.c_str());
-        envp.push_back(http_user_agent.c_str());
+        envp.push_back(strdup(request_method.c_str()));
+        envp.push_back(strdup(http_cookie.c_str()));
+        envp.push_back(strdup(http_user_agent.c_str()));
 
         if (req.method() == POST)
         {
             std::string content_length = "CONTENT_LENGTH=" + req.get_param("Content-Length");
             std::string content_type = "CONTENT_TYPE=" + req.get_param("Content-Type");
-            envp.push_back(content_length.c_str());
-            envp.push_back(content_type.c_str());
+            envp.push_back(strdup(content_length.c_str()));
+            envp.push_back(strdup(content_type.c_str()));
         }
         else
         {
             std::string query_string = "QUERY_STRING=" + req.args_str();
-            envp.push_back(query_string.c_str());
+            envp.push_back(strdup(query_string.c_str()));
         }
 
         envp.push_back(NULL);
@@ -87,20 +90,19 @@ Result<std::string, HttpStatus> CGI::process(std::string filepath, Request& req)
             close(m_pipefds[0]);
             close(m_pipefds[1]);
         }
-
-        exit(1);
+        exit(0);
     }
     else
     {
         // TODO: Why wont this work ?
 
-        // int stat_loc;
-        // pid_t pid;
-        // while ((pid = waitpid(m_pid, &stat_loc, WNOHANG)) >= 0)
-        //     ;
+        int stat_loc;
+        pid_t pid;
+        while ((pid = wait(&stat_loc)) > 0)
+            ;
 
-        // if (pid == -1 || WEXITSTATUS(stat_loc) != 0)
-        //     return Err<std::string, HttpStatus>(500);
+        if (pid == -1 || WEXITSTATUS(stat_loc) != 0)
+            return Err<std::string, HttpStatus>(500);
 
         ssize_t n;
         std::string str;

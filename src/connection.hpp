@@ -1,10 +1,8 @@
 #pragma once
 
-#include <iostream>
 #include <netinet/in.h>
 #include <sys/epoll.h>
 
-#include "colors.hpp"
 #include "http/request.hpp"
 
 class Connection
@@ -14,7 +12,11 @@ public:
 
     Connection(int fd, int sock_fd, struct sockaddr_in addr);
 
-    struct sockaddr_in addr();
+    struct sockaddr_in& addr()
+    {
+        return m_addr;
+    }
+
     int fd() const;
 
     int sock_fd()
@@ -55,6 +57,16 @@ public:
         m_reqStr = s;
     }
 
+    void set_last_event(int64_t i)
+    {
+        m_last_event = i;
+    }
+
+    int64_t get_last_event()
+    {
+        return m_last_event;
+    }
+
     void set_epollin(int epoll_fd);
     void set_epollout(int epoll_fd);
 
@@ -70,4 +82,6 @@ private:
 
     Request m_req;
     size_t m_bytes_read;
+
+    int64_t m_last_event;
 };

@@ -9,6 +9,7 @@
 #include <cstring>
 #include <exception>
 #include <iostream>
+#include <unistd.h>
 
 Webserv::Webserv() : m_running(true)
 {
@@ -134,9 +135,7 @@ void Webserv::poll_events()
         if (m_servers.count(events[i].data.fd) > 0)
         {
             Connection conn = acceptConnection(events[i].data.fd).unwrap();
-            ws::log << ws::dbg << "new connection accepted\n";
-            // if (m_connections.count(conn.fd()) > 0)
-            //     ws::log << ws::dbg << "Connection " << conn.fd() << " already in map\n";
+            conn.set_last_event(time());
             m_connections[conn.fd()] = conn;
             continue;
         }
@@ -158,6 +157,8 @@ void Webserv::poll_events()
 
             n = recv(events[i].data.fd, buf, READ_SIZE, 0);
             buf[n] = '\0';
+
+            conn.set_last_event(time());
 
             if (n == -1)
             {
@@ -200,7 +201,6 @@ void Webserv::poll_events()
 
             if (n < READ_SIZE || (n == READ_SIZE && conn.bytes_read() > conn.last_request().content_length()))
                 conn.set_epollout(m_epollFd);
-
         }
 
         else if ((events[i].events & EPOLLOUT))
@@ -266,6 +266,28 @@ void Webserv::poll_events()
             else
                 keep_alive(conn);
         }
+    }
+
+#define TIMEOUT 1000
+
+    while (1)
+    {
+        size_t n = 0;
+
+        for (std::map<int, Connection>::iterator it = m_connections.begin(); it != m_connections.end(); it++)
+        {
+            Connection& conn = it->second;
+            if (conn.get_last_event() - time() > TIMEOUT)
+            {
+                close_connection(conn);
+                ws::log << ws::dbg << "Connection " << conn.addr() << " timed out\n";
+                break;
+            }
+            n++;
+        }
+
+        if (n == m_connections.size())
+            break;
     }
 }
 

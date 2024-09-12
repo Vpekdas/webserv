@@ -169,9 +169,7 @@ Response Router::_route_with_location(Request& req, Location& loc, std::string& 
         final_path = path;
 
     if (req.method() == DELETE)
-    {
         return _delete_file(req, loc, path);
-    }
 
     if (access(final_path.c_str(), F_OK | R_OK) == -1)
     {
@@ -180,18 +178,6 @@ Response Router::_route_with_location(Request& req, Location& loc, std::string& 
             return _directory_listing(req, loc, path);
         else
             return HTTP_ERROR(404);
-    }
-
-    std::string ext = final_path.substr(final_path.rfind('.') + 1);
-    n = 0;
-
-    for (std::map<std::string, std::string>::iterator it = loc.cgis().begin(); it != loc.cgis().end(); it++)
-    {
-        if (it->first == ext)
-        {
-            n = 1;
-            break;
-        }
     }
 
     if (req.method() == POST && req.get_param("Content-Type").find("multipart/form-data") == 0)
@@ -232,6 +218,18 @@ Response Router::_route_with_location(Request& req, Location& loc, std::string& 
         else
         {
             std::cout << CYAN << "cannot open file" << RESET << std::endl;
+        }
+    }
+
+    std::string ext = final_path.substr(final_path.rfind('.') + 1);
+    n = 0;
+
+    for (std::map<std::string, std::string>::iterator it = loc.cgis().begin(); it != loc.cgis().end(); it++)
+    {
+        if (it->first == ext)
+        {
+            n = 1;
+            break;
         }
     }
 

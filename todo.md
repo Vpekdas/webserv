@@ -5,6 +5,7 @@
 - Handle HTTP redirection.
 - Add CGI timeout error
 - Add connection timeout
+- overwrite default error pages
 
 # ERRORS
 

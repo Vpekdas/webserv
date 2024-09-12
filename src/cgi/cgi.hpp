@@ -22,4 +22,5 @@ private:
     pid_t m_pid;
 
     int m_pipefds[2];
+    int64_t m_start_time;
 };

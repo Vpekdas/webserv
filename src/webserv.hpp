@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cstdio>
 #include <cerrno>
 #include <csignal>
 #include <cstdio>
@@ -10,6 +9,7 @@
 #include <string>
 #include <sys/epoll.h>
 #include <sys/socket.h>
+#include <sys/time.h>
 #include <sys/types.h>
 #include <unistd.h>
 
@@ -51,3 +51,10 @@ private:
     bool has_server(struct sockaddr_in addr);
     Server& get_server(struct sockaddr_in addr);
 };
+
+inline int64_t time()
+{
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return tv.tv_sec * 1000 + tv.tv_usec / 1000;
+}
