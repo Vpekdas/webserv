@@ -26,5 +26,6 @@ private:
     ServerConfig m_config;
 
     Response _route_with_location(Request& req, Location& loc, std::string& req_str);
-    Response _directory_listing(Request& req, Location& loc, std::string path);
+    Response _directory_listing(Request& req, Location& loc, std::string& path);
+    Response _delete_file(Request& req, Location& loc, std::string& path);
 };

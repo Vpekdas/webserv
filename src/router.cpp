@@ -15,6 +15,7 @@
 #include "router.hpp"
 #include "string.hpp"
 #include "webserv.hpp"
+#include <cstdio>
 #include <dirent.h>
 #include <time.h>
 
@@ -79,7 +80,7 @@ Router::Router(ServerConfig config) : m_config(config)
 {
 }
 
-Response Router::_directory_listing(Request& req, Location& loc, std::string path)
+Response Router::_directory_listing(Request& req, Location& loc, std::string& path)
 {
     DIR *dir;
     struct dirent *entry;
@@ -167,6 +168,11 @@ Response Router::_route_with_location(Request& req, Location& loc, std::string& 
     else
         final_path = path;
 
+    if (req.method() == DELETE)
+    {
+        return _delete_file(req, loc, path);
+    }
+
     if (access(final_path.c_str(), F_OK | R_OK) == -1)
     {
         // FIXME: CONDITIONAL JUMP
@@ -242,6 +248,19 @@ Response Router::_route_with_location(Request& req, Location& loc, std::string& 
     {
         return Response::ok(200, new StreamFile(final_path));
     }
+}
+
+Response Router::_delete_file(Request& req, Location& loc, std::string& path)
+{
+    (void)req;
+    if (access(path.c_str(), F_OK | R_OK) == -1)
+        return HTTP_ERROR(404);
+    if (unlink(path.c_str()) == -1)
+    {
+        ws::log << ws::err << "Cannot delete file " << loc.root() << "/" << path << ": " << strerror(errno) << "\n ";
+        return HTTP_ERROR(500);
+    }
+    return HTTP_ERROR(200);
 }
 
 Response Router::route(Request& req, std::string& req_str)

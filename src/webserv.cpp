@@ -5,6 +5,7 @@
 #include "logger.hpp"
 #include "server.hpp"
 #include <cstddef>
+#include <cstdio>
 #include <cstring>
 #include <exception>
 #include <iostream>
@@ -199,6 +200,7 @@ void Webserv::poll_events()
 
             if (n < READ_SIZE || (n == READ_SIZE && conn.bytes_read() > conn.last_request().content_length()))
                 conn.set_epollout(m_epollFd);
+
         }
 
         else if ((events[i].events & EPOLLOUT))
