@@ -3,6 +3,7 @@
 #include <csignal>
 
 static Webserv webserv;
+char **g_envp;
 
 void sigpipe(int signum)
 {
@@ -17,7 +18,7 @@ void signal_handler(int signum)
     webserv.quit();
 }
 
-int main(int argc, char *argv[])
+int main(int argc, char *argv[], char *envp[])
 {
     ws::log.init();
 
@@ -26,6 +27,8 @@ int main(int argc, char *argv[])
         ws::log << ws::err << "Missing configuration file\n";
         return 1;
     }
+
+    g_envp = envp;
 
     signal(SIGINT, signal_handler);
     signal(SIGPIPE, sigpipe);

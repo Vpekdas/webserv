@@ -43,8 +43,6 @@ Result<std::string, HttpStatus> CGI::process(std::string filepath, Request& req)
             exit(1);
         }
 
-        std::string script_filename = "SCRIPT_FILENAME=" + filepath;
-
         // clang-format off
         const char *argv[] = {
             m_path.c_str(),
@@ -58,6 +56,12 @@ Result<std::string, HttpStatus> CGI::process(std::string filepath, Request& req)
         std::vector<const char *> envp;
         envp.push_back("GATEWAY_INTERFACE=CGI/1.1");
         envp.push_back("REDIRECT_STATUS=200");
+
+        // if (m_path.rfind("/php-cgi") == m_path.size() - 8)
+        // {
+            std::string script_filename = "SCRIPT_FILENAME=" + filepath;
+            envp.push_back(strdup(script_filename.c_str()));
+        // }
 
         std::string request_method = "REQUEST_METHOD=" + std::string(strmethod(req.method()));
         std::string http_cookie = "HTTP_COOKIE=" + req.cookies();
@@ -109,25 +113,11 @@ Result<std::string, HttpStatus> CGI::process(std::string filepath, Request& req)
     }
     else
     {
-        // TODO: Why wont this work ?
         int stat_loc;
         pid_t result;
 
         while ((result = wait(&stat_loc)) > 0)
             ;
-
-        if (WIFEXITED(stat_loc))
-        {
-            int exit_status = WEXITSTATUS(stat_loc);
-            // std::cout << "Exit status: " << exit_status << "\n";
-            if (exit_status != 0)
-                return Err<std::string, HttpStatus>(500);
-        }
-        else
-        {
-            // std::cerr << "Child process did not terminate normally\n";
-            return Err<std::string, HttpStatus>(500);
-        }
 
         ssize_t n;
         std::string str;
@@ -140,8 +130,11 @@ Result<std::string, HttpStatus> CGI::process(std::string filepath, Request& req)
 
         close(m_pipefds[0]);
 
-        if (n == -1)
+        if (!WIFEXITED(stat_loc) || WEXITSTATUS(stat_loc) != 0 || n == -1)
+        {
+            std::cout << str << "\n";
             return Err<std::string, HttpStatus>(500);
+        }
 
         return str;
     }

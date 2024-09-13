@@ -20,6 +20,8 @@
 #define MAX_EVENTS 128
 #define READ_SIZE 512
 
+extern char **g_envp;
+
 class Webserv
 {
 public:

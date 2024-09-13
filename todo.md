@@ -1,10 +1,11 @@
 # TODOS
 
 - `POST` (still not working with CGI)
+- Session management
 - Handle HTTP redirection.
 - Add CGI timeout error
 - Add connection timeout
-- overwrite default error pages
+- Relative access in PHP
 
 # ERRORS
 
