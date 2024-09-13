@@ -110,6 +110,11 @@ public:
         return m_locations;
     }
 
+    int cgi_timeout()
+    {
+        return m_cgi_timeout;
+    }
+
 private:
     std::string m_server_name;
     struct sockaddr_in m_listen_addr;
@@ -117,6 +122,7 @@ private:
 
     /* Maximum accepted `Content-Length` */
     size_t m_max_content_length;
+    int m_cgi_timeout;
 
     std::vector<Location> m_locations;
 };

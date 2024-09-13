@@ -13,7 +13,7 @@ public:
     CGI();
     CGI(std::string path);
 
-    Result<std::string, HttpStatus> process(std::string filepath, Request& req);
+    Result<std::string, HttpStatus> process(std::string filepath, Request& req, int timeout);
 
 private:
     /* The CGI to execute. */

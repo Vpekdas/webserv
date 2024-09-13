@@ -192,9 +192,14 @@ Result<int, ConfigError> ServerConfig::deserialize(ConfigEntry& from)
             EXPECT_OK(int, ConfigError, res);
             m_locations.push_back(location);
         }
+        else if (name == "cgi_timeout" && entry.args().size() == 2 && entry.args()[1].type() == TOKEN_NUMBER)
+        {
+            m_cgi_timeout = entry.args()[1].number();
+        }
         else
         {
-            std::string entries[] = {"server_name", "listen", "error_page", "max_content_length", "location"};
+            std::string entries[] = {"server_name",        "listen",   "error_page",
+                                     "max_content_length", "location", "cgi_timeout"};
             return ConfigError::unknown_entry(entry.source(), token_name,
                                               _array_to_vec(entries, sizeof(entries) / sizeof(std::string)));
         }

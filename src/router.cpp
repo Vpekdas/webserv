@@ -257,7 +257,7 @@ Response Router::_route_with_location(Request& req, Location& loc, std::string& 
     if (n > 0)
     {
         CGI cgi(loc.cgis()[ext]);
-        Result<std::string, HttpStatus> res = cgi.process(final_path, req);
+        Result<std::string, HttpStatus> res = cgi.process(final_path, req, m_config.cgi_timeout());
         if (res.is_err())
             return HTTP_ERROR(res.unwrap_err(), m_config);
 

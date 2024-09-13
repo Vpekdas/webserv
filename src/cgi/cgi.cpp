@@ -19,10 +19,10 @@ CGI::CGI(std::string path) : m_path(path), m_pid(-1)
 
 // https://stackoverflow.com/questions/7047426/call-php-from-virtual-custom-web-server
 
-Result<std::string, HttpStatus> CGI::process(std::string filepath, Request& req)
+Result<std::string, HttpStatus> CGI::process(std::string filepath, Request& req, int timeout)
 {
     if (pipe(m_pipefds) == -1)
-        return Err<std::string, HttpStatus>(500);
+        return HttpStatus(500);
 
     m_start_time = time();
 
@@ -31,7 +31,7 @@ Result<std::string, HttpStatus> CGI::process(std::string filepath, Request& req)
     {
         close(m_pipefds[0]);
         close(m_pipefds[1]);
-        return Err<std::string, HttpStatus>(500);
+        return HttpStatus(500);
     }
 
     if (m_pid == 0)
@@ -57,6 +57,7 @@ Result<std::string, HttpStatus> CGI::process(std::string filepath, Request& req)
         envp.push_back("GATEWAY_INTERFACE=CGI/1.1");
         envp.push_back("REDIRECT_STATUS=200");
 
+        // NOTE: May be specific to php but not 100% sure
         // if (m_path.rfind("/php-cgi") == m_path.size() - 8)
         // {
             std::string script_filename = "SCRIPT_FILENAME=" + filepath;
@@ -89,21 +90,6 @@ Result<std::string, HttpStatus> CGI::process(std::string filepath, Request& req)
 
         // TODO: maybe use chdir here.
 
-        // std::cerr << CYAN << "PATH" << RESET << std::endl;
-        // std::cerr << CYAN << m_path << RESET << std::endl;
-
-        // std::cerr << CYAN << "ARGV" << RESET << std::endl;
-        // for (int i = 0; argv[i]; i++)
-        // {
-        //     std::cerr << CYAN << i << ": " << argv[i] << RESET << std::endl;
-        // }
-
-        // std::cerr << CYAN << "ENVP" << RESET << std::endl;
-        // for (int i = 0; envp[i]; i++)
-        // {
-        //     std::cerr << CYAN << i << ": " << envp[i] << RESET << std::endl;
-        // }
-
         if (execve(m_path.c_str(), (char **)argv, (char **)envp.data()) == -1)
         {
             close(m_pipefds[0]);
@@ -114,10 +100,15 @@ Result<std::string, HttpStatus> CGI::process(std::string filepath, Request& req)
     else
     {
         int stat_loc;
-        pid_t result;
 
-        while ((result = wait(&stat_loc)) > 0)
-            ;
+        while (waitpid(m_pid, &stat_loc, WNOHANG) == 0)
+        {
+            if (timeout > 0 && time() - m_start_time > timeout)
+            {
+                kill(m_pid, SIGQUIT);
+                return HttpStatus(500);
+            }
+        }
 
         ssize_t n;
         std::string str;
