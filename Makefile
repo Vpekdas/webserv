@@ -4,7 +4,7 @@ PROJECT_NAME	:= webserv
 
 # =========================== COMPILER AND FLAGS ============================= #
 CXX				:= clang++
-CXXFLAGS		:= -std=c++98 -Wall -Wextra -Werror -g3 -O3 -Ilibcpp -Isrc -D_DEBUG
+CXXFLAGS		:= -std=c++98 -Wall -Wextra -Werror -g3 -O3 -Isrc -D_DEBUG
 DEPFLAGS		:= -MMD -MP
 
 # ================================= ALIASES ================================== #
