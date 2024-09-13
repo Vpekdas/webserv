@@ -88,7 +88,7 @@ Response Router::_directory_listing(Request& req, Location& loc, std::string& pa
     if ((dir = opendir(path.c_str())) == NULL)
     {
         ws::log << ws::err << "opendir() failed: " << strerror(errno) << "\n";
-        return Response::httpcat(404);
+        return HTTP_ERROR(404, m_config);
     }
 
     std::string indexing;
@@ -176,14 +176,14 @@ Response Router::_route_with_location(Request& req, Location& loc, std::string& 
     }
 
     if (n == 0)
-        return HTTP_ERROR(405); // Method not allowed
+        return HTTP_ERROR(405, m_config); // Method not allowed
 
     struct stat sb;
     std::string path = loc.root() + "/" + req.path().substr(loc.route().size());
     std::string final_path;
 
     if (stat(path.c_str(), &sb) == -1)
-        return HTTP_ERROR(404);
+        return HTTP_ERROR(404, m_config);
 
     if (S_ISDIR(sb.st_mode))
         final_path = path + "/" + loc.default_page();
@@ -198,7 +198,7 @@ Response Router::_route_with_location(Request& req, Location& loc, std::string& 
         if (S_ISDIR(sb.st_mode) && loc.indexing())
             return _directory_listing(req, loc, path);
         else
-            return HTTP_ERROR(404);
+            return HTTP_ERROR(404, m_config);
     }
 
     if (req.method() == POST && req.get_param("Content-Type").find("multipart/form-data") == 0)
@@ -259,7 +259,7 @@ Response Router::_route_with_location(Request& req, Location& loc, std::string& 
         CGI cgi(loc.cgis()[ext]);
         Result<std::string, HttpStatus> res = cgi.process(final_path, req);
         if (res.is_err())
-            return Response::httpcat(res.unwrap_err());
+            return HTTP_ERROR(res.unwrap_err(), m_config);
 
         return Response::from_cgi(200, res.unwrap());
     }
@@ -273,13 +273,13 @@ Response Router::_delete_file(Request& req, Location& loc, std::string& path)
 {
     (void)req;
     if (access(path.c_str(), F_OK | R_OK) == -1)
-        return HTTP_ERROR(404);
+        return HTTP_ERROR(404, m_config);
     if (unlink(path.c_str()) == -1)
     {
         ws::log << ws::err << "Cannot delete file " << loc.root() << "/" << path << ": " << strerror(errno) << "\n ";
-        return HTTP_ERROR(500);
+        return HTTP_ERROR(500, m_config);
     }
-    return HTTP_ERROR(200);
+    return HTTP_ERROR(200, m_config);
 }
 
 Response Router::route(Request& req, std::string& req_str)
@@ -287,7 +287,7 @@ Response Router::route(Request& req, std::string& req_str)
     std::string path = req.path();
 
     if (m_config.locations().size() == 0)
-        return HTTP_ERROR(404);
+        return HTTP_ERROR(404, m_config);
 
     Location& best_match_loc = m_config.locations()[0];
     size_t best_match = best_match_loc.route().size();
@@ -304,5 +304,5 @@ Response Router::route(Request& req, std::string& req_str)
 
     if (path.find(best_match_loc.route()) == 0)
         return _route_with_location(req, best_match_loc, req_str);
-    return HTTP_ERROR(404);
+    return HTTP_ERROR(404, m_config);
 }

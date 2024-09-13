@@ -206,24 +206,27 @@ void Webserv::poll_events()
         else if ((events[i].events & EPOLLOUT))
         {
             Connection& conn = m_connections[events[i].data.fd];
-
             Request req = conn.last_request();
+
+            std::string host_str = req.get_param("Host").substr(0, req.get_param("Host").find(':'));
+            Host& host = m_servers[conn.sock_fd()].default_host();
+
+            if (m_servers[conn.sock_fd()].has_host(host_str))
+                host = m_servers[conn.sock_fd()].host(host_str);
 
             if (req.method() == POST && req.content_type() == "application/x-www-form-urlencoded")
                 req.set_args(conn.req_str());
-            // else if (req.method() == POST && req.content_type() == "multipart/form-data")
-            //     req.set_args(conn.req_str());
 
             Response response;
             // In our case only `POST` requests have a body. Other requests will not set a `Content-Length`.
             // TODO: `Content-Type` must also be set for `POST`
             if (req.method() == POST && !req.has_param("Content-Length"))
             {
-                response = HTTP_ERROR(411); // Length required
+                response = HTTP_ERROR(411, host.config()); // Length required
             }
             else if (conn.bytes_read() > req.content_length())
             {
-                response = HTTP_ERROR(413); // Payload too large
+                response = HTTP_ERROR(413, host.config()); // Payload too large
             }
             else
             {
@@ -234,11 +237,7 @@ void Webserv::poll_events()
                 else
                 {
                     // TODO: Check if the port is the same as the listen port I supposed
-                    std::string host = req.get_param("Host").substr(0, req.get_param("Host").find(':'));
-                    if (m_servers[conn.sock_fd()].has_host(host))
-                        response = m_servers[conn.sock_fd()].host(host).router().route(req, conn.req_str());
-                    else
-                        response = m_servers[conn.sock_fd()].default_host().router().route(req, conn.req_str());
+                    response = host.router().route(req, conn.req_str());
                 }
             }
 
@@ -254,7 +253,7 @@ void Webserv::poll_events()
                 ws::log << ws::info << strmethod(req.method()) << " `" << req.path() << "` -> " << NRED
                         << response.status().code() << " " << response.status() << RESET << "\n";
 
-            response.send(events[i].data.fd);
+            response.send(events[i].data.fd, host.config());
             delete response.body();
 
             conn.set_epollin(m_epollFd);

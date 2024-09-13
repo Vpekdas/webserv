@@ -148,13 +148,13 @@ std::string Response::encode_header()
     return r.str();
 }
 
-void Response::send(int conn)
+void Response::send(int conn, ServerConfig& config)
 {
     if (!m_body)
     {
         ws::log << ws::err << FILE_INFO << "Attempted to send a invalid response\n";
-        Response err = HTTP_ERROR(500); // Internal server error
-        err.send(conn);
+        Response err = HTTP_ERROR(500, config); // Internal server error
+        err.send(conn, config);
         delete err.m_body;
         return;
     }
@@ -173,47 +173,46 @@ void Response::add_param(std::string key, std::string value)
     m_params[key] = value;
 }
 
-static void _replace_all(std::string& src, std::string from, std::string to)
+Response Response::http_error(HttpStatus status, ServerConfig& config, const char *func, const char *file, int line)
 {
-    size_t i;
+    (void)func;
+    (void)file;
+    (void)line;
 
-    while ((i = src.find(from)) != std::string::npos)
-        src.replace(i, from.size(), to);
-}
-
-Response Response::httpcat(HttpStatus status)
-{
     Response response(status);
-    std::string content = source;
 
-    _replace_all(content, "%{error}", to_string(status.code()));
-    response.m_body = new StringFile(content, "text/html");
+    std::cout << config.error_pages()[404] << "\n";
 
-    response.add_param("Content-Type", "text/html");
-    response.add_param("Content-Length", to_string(response.m_body->file_size()));
+    if (config.error_pages().count(status.code()) == 0 ||
+        access(config.error_pages()[status.code()].c_str(), F_OK | R_OK) == -1)
+    {
+        std::string content = source;
 
-    return response;
-}
+        replace_all(content, "%{error}", to_string(status.code()));
 
-Response Response::http_error(HttpStatus status, const char *func, const char *file, int line)
-{
-    Response response(status);
-    std::string content = source;
+#ifdef _DEBUG
+        replace_all(content, "%{func}", func);
+        replace_all(content, "%{file}", file);
+        replace_all(content, "%{line}", to_string(line));
 
-    replace_all(content, "%{error}", to_string(status.code()));
-    replace_all(content, "%{func}", func);
-    replace_all(content, "%{file}", file);
-    replace_all(content, "%{line}", to_string(line));
+        char buf[64];
 
-    char buf[64];
+        getcwd(buf, 64);
+        replace_all(content, "%{path}", buf);
+#endif
 
-    getcwd(buf, 64);
-    replace_all(content, "%{path}", buf);
+        response.m_body = new StringFile(content, "text/html");
 
-    response.m_body = new StringFile(content, "text/html");
+        response.add_param("Content-Type", "text/html");
+        response.add_param("Content-Length", to_string(response.m_body->file_size()));
+    }
+    else
+    {
+        response.m_body = new StreamFile(config.error_pages()[status.code()]);
 
-    response.add_param("Content-Type", "text/html");
-    response.add_param("Content-Length", to_string(response.m_body->file_size()));
+        response.add_param("Content-Type", "text/html");
+        response.add_param("Content-Length", to_string(response.m_body->file_size()));
+    }
 
     return response;
 }

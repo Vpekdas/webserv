@@ -3,6 +3,7 @@
 #include <map>
 #include <string>
 
+#include "config/config.hpp"
 #include "file.hpp"
 #include "status.hpp"
 
@@ -12,8 +13,7 @@ public:
     Response();
 
     static Response ok(HttpStatus status, File *file);
-    static Response httpcat(HttpStatus status);
-    static Response http_error(HttpStatus status, const char *func, const char *file, int line);
+    static Response http_error(HttpStatus status, ServerConfig& config, const char *func, const char *file, int line);
 
     /*
         CGIs will starts the response with a few headers value, but without the first line.
@@ -21,7 +21,7 @@ public:
     static Response from_cgi(HttpStatus status, std::string str);
 
     void add_param(std::string key, std::string value);
-    void send(int conn);
+    void send(int conn, ServerConfig& config);
 
     HttpStatus status();
     File *body();
@@ -36,8 +36,4 @@ private:
     Response(HttpStatus status);
 };
 
-#ifdef _DEBUG
-#define HTTP_ERROR(CODE) Response::http_error(CODE, __FUNCTION__, __FILE__, __LINE__)
-#else
-#define HTTP_ERROR(CODE) Response::httpcat(CODE)
-#endif
+#define HTTP_ERROR(CODE, CONF) Response::http_error(CODE, CONF, __FUNCTION__, __FILE__, __LINE__)

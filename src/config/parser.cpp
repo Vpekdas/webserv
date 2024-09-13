@@ -447,7 +447,7 @@ static Option<Token> _next_token(size_t *index, std::string source, size_t *line
     else if (buf == "}")
         return Some(Token::right_curly(*line, start_column));
     else if (_is_all_digits(buf))
-        return Some(Token::num(std::atoi(source.data()), *line, start_column));
+        return Some(Token::num(std::atoi(buf.c_str()), *line, start_column));
     else if (is_string)
         return Some(Token::str(buf, *line, start_column));
 
