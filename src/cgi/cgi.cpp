@@ -56,7 +56,7 @@ Result<std::string, HttpStatus> CGI::process(std::string filepath, Request& req)
         // https://www.ietf.org/rfc/rfc3875.txt
 
         std::vector<const char *> envp;
-        envp.push_back("GATEWAY_INTERFACE=GCI/1.1");
+        envp.push_back("GATEWAY_INTERFACE=CGI/1.1");
         envp.push_back("REDIRECT_STATUS=200");
 
         std::string request_method = "REQUEST_METHOD=" + std::string(strmethod(req.method()));
@@ -85,6 +85,21 @@ Result<std::string, HttpStatus> CGI::process(std::string filepath, Request& req)
 
         // TODO: maybe use chdir here.
 
+        // std::cerr << CYAN << "PATH" << RESET << std::endl;
+        // std::cerr << CYAN << m_path << RESET << std::endl;
+
+        // std::cerr << CYAN << "ARGV" << RESET << std::endl;
+        // for (int i = 0; argv[i]; i++)
+        // {
+        //     std::cerr << CYAN << i << ": " << argv[i] << RESET << std::endl;
+        // }
+
+        // std::cerr << CYAN << "ENVP" << RESET << std::endl;
+        // for (int i = 0; envp[i]; i++)
+        // {
+        //     std::cerr << CYAN << i << ": " << envp[i] << RESET << std::endl;
+        // }
+
         if (execve(m_path.c_str(), (char **)argv, (char **)envp.data()) == -1)
         {
             close(m_pipefds[0]);
@@ -95,17 +110,24 @@ Result<std::string, HttpStatus> CGI::process(std::string filepath, Request& req)
     else
     {
         // TODO: Why wont this work ?
+        int stat_loc;
+        pid_t result;
 
-        // int stat_loc;
-        // pid_t pid;
-        // while ((pid = waitpid(m_pid, &stat_loc, WNOHANG)) > 0)
-        //     ;
-        while (wait(NULL) > 0);
+        while ((result = wait(&stat_loc)) > 0)
+            ;
 
-        // std::cout << WEXITSTATUS(stat_loc) << ", pid = " << pid << ", error = " << strerror(errno) << "\n";
-
-        // if (pid == -1 || WEXITSTATUS(stat_loc) != 0)
-        //     return Err<std::string, HttpStatus>(500);
+        if (WIFEXITED(stat_loc))
+        {
+            int exit_status = WEXITSTATUS(stat_loc);
+            // std::cout << "Exit status: " << exit_status << "\n";
+            if (exit_status != 0)
+                return Err<std::string, HttpStatus>(500);
+        }
+        else
+        {
+            // std::cerr << "Child process did not terminate normally\n";
+            return Err<std::string, HttpStatus>(500);
+        }
 
         ssize_t n;
         std::string str;
