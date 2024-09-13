@@ -96,15 +96,16 @@ Result<std::string, HttpStatus> CGI::process(std::string filepath, Request& req)
     {
         // TODO: Why wont this work ?
 
-        int stat_loc;
-        pid_t pid;
-        while ((pid = waitpid(-1, &stat_loc, WNOHANG)) > 0)
-            ;
+        // int stat_loc;
+        // pid_t pid;
+        // while ((pid = waitpid(m_pid, &stat_loc, WNOHANG)) > 0)
+        //     ;
+        while (wait(NULL) > 0);
 
-        std::cout << WEXITSTATUS(stat_loc) << ", pid = " << pid << ", error = " << strerror(errno) << "\n";
+        // std::cout << WEXITSTATUS(stat_loc) << ", pid = " << pid << ", error = " << strerror(errno) << "\n";
 
-        if (pid == -1 || WEXITSTATUS(stat_loc) != 0)
-            return Err<std::string, HttpStatus>(500);
+        // if (pid == -1 || WEXITSTATUS(stat_loc) != 0)
+        //     return Err<std::string, HttpStatus>(500);
 
         ssize_t n;
         std::string str;

@@ -144,26 +144,26 @@ Response Router::_directory_listing(Request& req, Location& loc, std::string& pa
 
 Response Router::_route_with_location(Request& req, Location& loc, std::string& req_str)
 {
-    // THIS IS BROKEN (ALSO FUCK BROWSER CACHE)
+    // FIXME: THIS IS BROKEN (ALSO FUCK BROWSER CACHE)
 
-    Option<std::string> res = loc.redirect();
-    if (res.is_some())
-    {
-        HttpStatus code;
+    // Option<std::string> res = loc.redirect();
+    // if (res.is_some())
+    // {
+    //     HttpStatus code;
 
-        if (req.method() == GET || req.method() == HEAD)
-        {
-            code = 301;
-        }
-        else if (req.method() == POST)
-        {
-            code = 308;
-        }
+    //     if (req.method() == GET || req.method() == HEAD)
+    //     {
+    //         code = 301;
+    //     }
+    //     else if (req.method() == POST)
+    //     {
+    //         code = 308;
+    //     }
 
-        Response response = Response::ok(code, new StringFile("", ""));
-        response.add_param("Location", res.unwrap());
-        return response;
-    }
+    //     Response response = Response::ok(code, new StringFile("", ""));
+    //     response.add_param("Location", res.unwrap());
+    //     return response;
+    // }
 
     size_t n = 0;
     for (std::vector<Method>::iterator it = loc.methods().begin(); it != loc.methods().end(); it++)
@@ -290,19 +290,20 @@ Response Router::route(Request& req, std::string& req_str)
         return HTTP_ERROR(404, m_config);
 
     Location& best_match_loc = m_config.locations()[0];
-    size_t best_match = best_match_loc.route().size();
+    // size_t best_match = best_match_loc.route().size();
 
     for (std::vector<Location>::iterator it = m_config.locations().begin(); it != m_config.locations().end(); it++)
     {
         Location& location = *it;
-        if (path.find(location.route()) == 0 && location.route().size() > best_match)
+        if (path.find(location.route()) == 0 /*&& location.route().size() > best_match*/)
         {
-            best_match = location.route().size();
+            // best_match = location.route().size();
             best_match_loc = location;
+            break; // FIXME:
         }
     }
 
-    if (path.find(best_match_loc.route()) == 0)
-        return _route_with_location(req, best_match_loc, req_str);
-    return HTTP_ERROR(404, m_config);
+    // if (path.find(best_match_loc.route()) == 0)
+    return _route_with_location(req, best_match_loc, req_str);
+    // return HTTP_ERROR(404, m_config);
 }
