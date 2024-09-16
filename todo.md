@@ -5,7 +5,6 @@
 - Handle HTTP redirection.
 - Add CGI timeout error
 - Add connection timeout
-- Relative access in PHP
 
 # ERRORS
 

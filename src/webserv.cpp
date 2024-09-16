@@ -177,6 +177,9 @@ void Webserv::poll_events()
                 Request req = Request::parse(req_str).unwrap();
                 conn.set_last_request(req);
 
+                std::string host_str = req.get_param("Host").substr(0, req.get_param("Host").find(':'));
+                Host& host = m_servers[conn.sock_fd()].default_host();
+
                 std::string leftovers = req_str.substr(req.header_size());
                 req_str.clear();
                 if (!leftovers.empty())
@@ -186,7 +189,8 @@ void Webserv::poll_events()
                     conn.set_req_str(leftovers);
                 }
 
-                if (!req.has_param("Content-Length"))
+                if (!req.has_param("Content-Length") || leftovers.size() > host.config().max_content_length() ||
+                    leftovers.size() > req.content_length())
                 {
                     conn.set_epollout(m_epollFd);
                     continue;
@@ -194,12 +198,19 @@ void Webserv::poll_events()
             }
             else if (conn.waiting_for_body())
             {
+                Request& req = conn.last_request();
+                std::string host_str = req.get_param("Host").substr(0, req.get_param("Host").find(':'));
+                Host& host = m_servers[conn.sock_fd()].default_host();
+
                 // TODO: Process the data.
                 conn.set_bytes_read(conn.bytes_read() + n);
                 conn.req_str().append(buf, n);
+
+                if (conn.bytes_read() > host.config().max_content_length() || conn.bytes_read() > req.content_length())
+                    conn.set_epollout(m_epollFd);
             }
 
-            if (n < READ_SIZE || (n == READ_SIZE && conn.bytes_read() > conn.last_request().content_length()))
+            if (n < READ_SIZE)
                 conn.set_epollout(m_epollFd);
         }
 
@@ -224,7 +235,7 @@ void Webserv::poll_events()
             {
                 response = HTTP_ERROR(411, host.config()); // Length required
             }
-            else if (conn.bytes_read() > req.content_length())
+            else if (conn.bytes_read() > req.content_length() || conn.bytes_read() > host.config().max_content_length())
             {
                 response = HTTP_ERROR(413, host.config()); // Payload too large
             }
