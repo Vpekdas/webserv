@@ -34,6 +34,7 @@ int main(int argc, char *argv[], char *envp[])
     signal(SIGPIPE, sigpipe);
 
     File::_build_mime_table();
+    Response::_build_themes();
 
     if (webserv.initialize(argv[1]) != 0)
         return 1;
