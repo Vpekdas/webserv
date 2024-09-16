@@ -237,7 +237,7 @@ void Webserv::poll_events()
             }
             else if (conn.bytes_read() > req.content_length() || conn.bytes_read() > host.config().max_content_length())
             {
-                response = HTTP_ERROR(413, host.config()); // Payload too large
+                response = HTTP_ERROR(413, host.config()); // Payload Too Large
             }
             else
             {

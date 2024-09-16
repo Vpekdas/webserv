@@ -46,7 +46,7 @@ std::ostream& operator<<(std::ostream& os, HttpStatus const& error)
         os << "Length required";
         break;
     case 413:
-        os << "Payload too large";
+        os << "Payload Too Large";
         break;
     case 500:
         os << "Internal server error";
