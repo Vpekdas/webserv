@@ -37,8 +37,8 @@ static std::string source =
 "    </head>" SEP
 "    <body>" SEP
 "        <h1>Oops, there seems to be an error !</h1>" SEP
-"        <h2>Here's a cat to make you feel better</h3>" SEP
-"        <img src='https://http.cat/%{error}'>" SEP
+"        <h2>Here's a %{error_theme} to make you feel better</h3>" SEP
+"        <img src='%{error_url}/%{error}.jpg' style='height: 70%'>" SEP
 "    </body>" SEP
 "</html>" SEP;
 #else
@@ -66,13 +66,26 @@ static std::string source =
 "    </head>" SEP
 "    <body>" SEP
 "        <h1>Oops, there seems to be an error !</h1>" SEP
-"        <h2>Here's a cat to make you feel better</h3>" SEP
+"        <h2>Here's a %{error_theme} to make you feel better</h3>" SEP
 "        <h2 style='color: yellow;'>in %{func}() at <a style='color: yellow;' href='vscode://file/%{path}/%{file}:%{line}'>%{file}:%{line}</a></h2>" SEP
-"        <img src='https://http.cat/%{error}'>" SEP
+"        <img src='%{error_url}/%{error}.jpg' style='width: 45%;'>" SEP
 "    </body>" SEP
 "</html>" SEP;
 #endif
 // clang-format on
+
+std::map<std::string, std::string> Response::m_themes;
+
+void Response::_build_themes()
+{
+    m_themes["cat"] = "https://http.cat";
+    m_themes["dog"] = "https://http.dog";
+    m_themes["duck"] = "https://httpducks.com";
+    m_themes["goat"] = "https://httpgoats.com";
+    m_themes["garden"] = "https://http.garden";
+    m_themes["pizza"] = "https://http.pizza";
+    m_themes["fish"] = "https://http.fish";
+}
 
 Response::Response() : m_status(200), m_body(NULL)
 {
@@ -186,6 +199,14 @@ Response Response::http_error(HttpStatus status, ServerConfig& config, const cha
     {
         std::string content = source;
 
+        std::string theme;
+        if (m_themes.count(config.error_theme()) > 0)
+            theme = config.error_theme();
+        else
+            theme = "cat";
+
+        replace_all(content, "%{error_url}", m_themes[theme]);
+        replace_all(content, "%{error_theme}", theme);
         replace_all(content, "%{error}", to_string(status.code()));
 
 #ifdef _DEBUG

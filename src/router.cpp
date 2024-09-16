@@ -147,24 +147,23 @@ Response Router::_route_with_location(Request& req, Location& loc, std::string& 
 {
     // FIXME: THIS IS BROKEN (ALSO FUCK BROWSER CACHE)
 
-    // Option<std::string> res = loc.redirect();
-    // if (res.is_some())
-    // {
-    //     HttpStatus code;
+    Option<std::string> res = loc.redirect();
+    if (res.is_some())
+    {
+        HttpStatus code = 307;
 
-    //     if (req.method() == GET || req.method() == HEAD)
-    //     {
-    //         code = 301;
-    //     }
-    //     else if (req.method() == POST)
-    //     {
-    //         code = 308;
-    //     }
-
-    //     Response response = Response::ok(code, new StringFile("", ""));
-    //     response.add_param("Location", res.unwrap());
-    //     return response;
-    // }
+        // if (req.method() == GET || req.method() == HEAD)
+        // {
+        //     code = 301;
+        // }
+        // else if (req.method() == POST)
+        // {
+        //     code = 308;
+        // }
+        Response response = Response::ok(code, new StringFile("", ""));
+        response.add_param("Location", res.unwrap());
+        return response;
+    }
 
     size_t n = 0;
     for (std::vector<Method>::iterator it = loc.methods().begin(); it != loc.methods().end(); it++)

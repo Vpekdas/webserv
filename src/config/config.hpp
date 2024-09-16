@@ -115,6 +115,11 @@ public:
         return m_cgi_timeout;
     }
 
+    const std::string& error_theme()
+    {
+        return m_error_theme;
+    }
+
 private:
     std::string m_server_name;
     struct sockaddr_in m_listen_addr;
@@ -125,6 +130,7 @@ private:
     int m_cgi_timeout;
 
     std::vector<Location> m_locations;
+    std::string m_error_theme;
 };
 
 class Config : public Deser

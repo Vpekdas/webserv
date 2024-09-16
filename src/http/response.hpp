@@ -15,6 +15,8 @@ public:
     static Response ok(HttpStatus status, File *file);
     static Response http_error(HttpStatus status, ServerConfig& config, const char *func, const char *file, int line);
 
+    static void _build_themes();
+
     /*
         CGIs will starts the response with a few headers value, but without the first line.
      */
@@ -34,6 +36,8 @@ private:
     std::map<std::string, std::string> m_params;
 
     Response(HttpStatus status);
+
+    static std::map<std::string, std::string> m_themes;
 };
 
 #define HTTP_ERROR(CODE, CONF) Response::http_error(CODE, CONF, __FUNCTION__, __FILE__, __LINE__)

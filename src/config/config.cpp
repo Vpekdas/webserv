@@ -196,6 +196,10 @@ Result<int, ConfigError> ServerConfig::deserialize(ConfigEntry& from)
         {
             m_cgi_timeout = entry.args()[1].number();
         }
+        else if (name == "error_theme" && entry.args().size() == 2 && entry.args()[1].type() == TOKEN_STRING)
+        {
+            m_error_theme = entry.args()[1].str();
+        }
         else
         {
             std::string entries[] = {"server_name",        "listen",   "error_page",
