@@ -290,20 +290,21 @@ Response Router::route(Request& req, std::string& req_str)
         return HTTP_ERROR(404, m_config);
 
     Location& best_match_loc = m_config.locations()[0];
-    // size_t best_match = best_match_loc.route().size();
+    size_t best_match = -1;
 
     for (std::vector<Location>::iterator it = m_config.locations().begin(); it != m_config.locations().end(); it++)
     {
         Location& location = *it;
-        if (path.find(location.route()) == 0 /*&& location.route().size() > best_match*/)
+        if (path.find(location.route()) == 0 && (best_match == (size_t)-1 || location.route().size() > best_match))
         {
-            // best_match = location.route().size();
+            best_match = location.route().size();
             best_match_loc = location;
-            break; // FIXME:
         }
     }
 
-    // if (path.find(best_match_loc.route()) == 0)
-    return _route_with_location(req, best_match_loc, req_str);
-    // return HTTP_ERROR(404, m_config);
+    if (path.find(best_match_loc.route()) == 0)
+    {
+        return _route_with_location(req, best_match_loc, req_str);
+    }
+    return HTTP_ERROR(404, m_config);
 }

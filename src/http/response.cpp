@@ -181,8 +181,6 @@ Response Response::http_error(HttpStatus status, ServerConfig& config, const cha
 
     Response response(status);
 
-    std::cout << config.error_pages()[404] << "\n";
-
     if (config.error_pages().count(status.code()) == 0 ||
         access(config.error_pages()[status.code()].c_str(), F_OK | R_OK) == -1)
     {
