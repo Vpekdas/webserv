@@ -18,7 +18,7 @@
 #include "server.hpp"
 
 #define MAX_EVENTS 128
-#define READ_SIZE 512
+#define READ_SIZE 4096
 
 extern char **g_envp;
 

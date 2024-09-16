@@ -1,3 +1,4 @@
+#include <cctype>
 #include <iostream>
 #include <map>
 #include <string>
@@ -203,43 +204,62 @@ Response Router::_route_with_location(Request& req, Location& loc, std::string& 
 
     if (req.method() == POST && req.get_param("Content-Type").find("multipart/form-data") == 0)
     {
-        size_t pos = req_str.find(SEP SEP);
+        // std::cout << req.get_param("Content-Type") << "\n";
 
-        std::string header;
-        std::string body;
-
-        if (pos == std::string::npos)
+        size_t i = 0;
+        while (i != std::string::npos)
         {
-            header = req_str;
-        }
-        else
-        {
-            header = req_str.substr(0, pos + 2);
-            body = req_str.substr(pos + 4);
-        }
+            std::string boundary = req_str.substr(i, 60);
 
-        Request part_req = Request::parse_part(header).unwrap();
+            size_t headerStart = i + boundary.size();
+            size_t pos = req_str.find("\r\n\r\n", headerStart);
 
-        // TODO: Maybe try to protect the find below ?
-        int fileNamePos = header.find("filename=") + 10;
-        std::string fileName;
+            if (pos == std::string::npos)
+                break;
 
-        while (header[fileNamePos] && header[fileNamePos] != '"')
-        {
-            fileName += header[fileNamePos];
-            fileNamePos++;
+            Request partReq = Request::parse_part(req_str.substr(headerStart, pos + 2 - headerStart)).unwrap();
+            i = req_str.find(boundary, pos);
+
+            // std::cout << pos << ", " << headerStart << std::endl;
+
+            // std::string& contentType = partReq.get_param("Content-Disposition");
+            // std::string filename = contentType.substr(contentType.find("filename=") + 10,
+            //                                           contentType.find('"', contentType.find("filename=") + 10));
+
+            // std::cout << req_str.substr(headerStart, pos + 2) << "\n";
         }
 
-        std::ofstream file((loc.upload_dir() + "/" + fileName).c_str(), std::ios::binary);
-        if (file.is_open())
-        {
-            file.write(body.c_str(), body.size());
-            file.close();
-        }
-        else
-        {
-            std::cout << CYAN << "cannot open file" << RESET << std::endl;
-        }
+        // int boundaryPos = header.find("--");
+
+        // // skip --
+        // while (header[boundaryPos] && header[boundaryPos] == '-')
+        //     boundaryPos++;
+
+        // // copy all digit after -- till the end
+        // std::string boundary;
+
+        // while (header[boundaryPos] && std::isdigit(header[boundaryPos]))
+        // {
+        //     boundary += header[boundaryPos];
+        //     boundaryPos++;
+        // }
+
+        // // std::ofstream file((loc.upload_dir() + "/" + fileName).c_str(), std::ios::binary);
+        // if (m_boundaries.find(boundary) == m_boundaries.end())
+        // {
+        //     int fd = open((loc.upload_dir() + "/" + fileName).c_str(), O_WRONLY | O_CREAT | O_APPEND, 0644);
+        //     if (fd != -1)
+        //         m_boundaries[boundary] = fd;
+        // }
+
+        // if (m_boundaries.find(boundary) != m_boundaries.end())
+        // {
+        //     if (write(m_boundaries.find(boundary)->second, body.c_str(), body.size()) == 0)
+        //         close(m_boundaries.find(boundary)->second);
+        //     // file.write(body.c_str(), body.size());
+        //     // file.close();
+        // }
+        // boundary.clear();
     }
 
     std::string ext = final_path.substr(final_path.rfind('.') + 1);

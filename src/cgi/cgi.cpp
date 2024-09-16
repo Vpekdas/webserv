@@ -1,5 +1,6 @@
 #include "cgi.hpp"
 #include "http/request.hpp"
+#include "logger.hpp"
 #include "result.hpp"
 #include "webserv.hpp"
 
@@ -106,6 +107,7 @@ Result<std::string, HttpStatus> CGI::process(std::string filepath, Request& req,
             if (timeout > 0 && time() - m_start_time > timeout)
             {
                 kill(m_pid, SIGQUIT);
+                ws::log << ws::warn << "CGI `" << m_path << "` timed out\n";
                 return HttpStatus(500);
             }
         }
