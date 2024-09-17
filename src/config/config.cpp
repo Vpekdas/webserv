@@ -145,7 +145,7 @@ Result<int, ConfigError> Location::deserialize(ConfigEntry& from)
     return 0;
 }
 
-ServerConfig::ServerConfig()
+ServerConfig::ServerConfig() : m_cgi_timeout(0)
 {
 }
 

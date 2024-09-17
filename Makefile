@@ -131,6 +131,11 @@ sites/rust/index.rsc:
 	cd rust && cargo build --release
 	cp rust/target/release/rust sites/demo/rust/index.rsc
 
+portfolio:
+	git clone https://github.com/Vpekdas/Vpekdas.github.io sites/portfolio
+
+extra: portfolio
+
 $(NAME): $(OBJS)
 #	==================== draw progress bar ===================
 #	=========== erase prev line + write "compiling" ==========

@@ -144,6 +144,70 @@ Response Router::_directory_listing(Request& req, Location& loc, std::string& pa
     return Response::ok(200, new StringFile(source2, File::mime_from_ext("html")));
 }
 
+void Router::_upload_files(std::string& req_str)
+{
+    size_t i = 0;
+
+    // std::cout << req_str << std::endl;
+    std::string boundary = req_str.substr(i, 60);
+    while (i != std::string::npos)
+    {
+        size_t headerStart = i + boundary.size();
+
+        size_t contentStart = req_str.find("\r\n\r\n", headerStart) + 4;
+
+        if (contentStart == std::string::npos)
+            break;
+        size_t contentEnd = req_str.find(boundary, contentStart);
+        if (contentEnd == std::string::npos)
+            break;
+
+        // Request partReq = Request::parse_part(req_str.substr(headerStart, pos + 2 - headerStart)).unwrap();
+        i = req_str.find(boundary, contentEnd);
+        std::cout << req_str.substr(contentStart, (contentEnd - 2) - contentStart);
+
+        // std::string& contentDisp = partReq.get_param("Content-Disposition");
+        // std::cout << contentDisp << "\n";
+        // std::string filename = contentDisp.substr(contentDisp.find("filename=") + 10,
+        //                                           contentDisp.find('"', contentDisp.find("filename=") + 10));
+        // std::cout << filename << "\n";
+
+        // pos + 4 ===> i
+    }
+
+    // int boundaryPos = header.find("--");
+
+    // // skip --
+    // while (header[boundaryPos] && header[boundaryPos] == '-')
+    //     boundaryPos++;
+
+    // // copy all digit after -- till the end
+    // std::string boundary;
+
+    // while (header[boundaryPos] && std::isdigit(header[boundaryPos]))
+    // {
+    //     boundary += header[boundaryPos];
+    //     boundaryPos++;
+    // }
+
+    // // std::ofstream file((loc.upload_dir() + "/" + fileName).c_str(), std::ios::binary);
+    // if (m_boundaries.find(boundary) == m_boundaries.end())
+    // {
+    //     int fd = open((loc.upload_dir() + "/" + fileName).c_str(), O_WRONLY | O_CREAT | O_APPEND, 0644);
+    //     if (fd != -1)
+    //         m_boundaries[boundary] = fd;
+    // }
+
+    // if (m_boundaries.find(boundary) != m_boundaries.end())
+    // {
+    //     if (write(m_boundaries.find(boundary)->second, body.c_str(), body.size()) == 0)
+    //         close(m_boundaries.find(boundary)->second);
+    //     // file.write(body.c_str(), body.size());
+    //     // file.close();
+    // }
+    // boundary.clear();
+}
+
 Response Router::_route_with_location(Request& req, Location& loc, std::string& req_str)
 {
     // FIXME: THIS IS BROKEN (ALSO FUCK BROWSER CACHE)
@@ -204,66 +268,7 @@ Response Router::_route_with_location(Request& req, Location& loc, std::string& 
 
     if (req.method() == POST && req.get_param("Content-Type").find("multipart/form-data") == 0)
     {
-        size_t i = 0;
-
-        // std::cout << req_str << std::endl;
-        std::string boundary = req_str.substr(i, 60);
-        while (i != std::string::npos)
-        {
-            size_t headerStart = i + boundary.size();
-
-            size_t contentStart = req_str.find("\r\n\r\n", headerStart) + 4;
-
-            if (contentStart == std::string::npos)
-                break;
-            size_t contentEnd = req_str.find(boundary, contentStart);
-            if (contentEnd == std::string::npos)
-                break;
-
-            // Request partReq = Request::parse_part(req_str.substr(headerStart, pos + 2 - headerStart)).unwrap();
-            i = req_str.find(boundary, contentEnd);
-            std::cout << req_str.substr(contentStart, (contentEnd - 2) - contentStart);
-
-            // std::string& contentDisp = partReq.get_param("Content-Disposition");
-            // std::cout << contentDisp << "\n";
-            // std::string filename = contentDisp.substr(contentDisp.find("filename=") + 10,
-            //                                           contentDisp.find('"', contentDisp.find("filename=") + 10));
-            // std::cout << filename << "\n";
-
-            // pos + 4 ===> i
-        }
-
-        // int boundaryPos = header.find("--");
-
-        // // skip --
-        // while (header[boundaryPos] && header[boundaryPos] == '-')
-        //     boundaryPos++;
-
-        // // copy all digit after -- till the end
-        // std::string boundary;
-
-        // while (header[boundaryPos] && std::isdigit(header[boundaryPos]))
-        // {
-        //     boundary += header[boundaryPos];
-        //     boundaryPos++;
-        // }
-
-        // // std::ofstream file((loc.upload_dir() + "/" + fileName).c_str(), std::ios::binary);
-        // if (m_boundaries.find(boundary) == m_boundaries.end())
-        // {
-        //     int fd = open((loc.upload_dir() + "/" + fileName).c_str(), O_WRONLY | O_CREAT | O_APPEND, 0644);
-        //     if (fd != -1)
-        //         m_boundaries[boundary] = fd;
-        // }
-
-        // if (m_boundaries.find(boundary) != m_boundaries.end())
-        // {
-        //     if (write(m_boundaries.find(boundary)->second, body.c_str(), body.size()) == 0)
-        //         close(m_boundaries.find(boundary)->second);
-        //     // file.write(body.c_str(), body.size());
-        //     // file.close();
-        // }
-        // boundary.clear();
+        _upload_files(req_str);
     }
 
     std::string ext = final_path.substr(final_path.rfind('.') + 1);
@@ -281,7 +286,7 @@ Response Router::_route_with_location(Request& req, Location& loc, std::string& 
     if (n > 0)
     {
         CGI cgi(loc.cgis()[ext]);
-        Result<std::string, HttpStatus> res = cgi.process(final_path, req, m_config.cgi_timeout());
+        Result<std::string, HttpStatus> res = cgi.process(final_path, req, m_config.cgi_timeout(), req_str);
         if (res.is_err())
             return HTTP_ERROR(res.unwrap_err(), m_config);
 

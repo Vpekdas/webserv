@@ -13,7 +13,7 @@ public:
     CGI();
     CGI(std::string path);
 
-    Result<std::string, HttpStatus> process(std::string filepath, Request& req, int timeout);
+    Result<std::string, HttpStatus> process(std::string filepath, Request& req, int timeout, std::string& req_str);
 
 private:
     /* The CGI to execute. */
@@ -21,6 +21,7 @@ private:
     /* PID of the children process that holds the CGI. */
     pid_t m_pid;
 
-    int m_pipefds[2];
+    int m_stdout[2];
+    int m_stdin[2];
     int64_t m_start_time;
 };
