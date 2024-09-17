@@ -1,6 +1,5 @@
 # TODOS
 
-- `POST` (still not working with CGI)
 - Session management
 - Handle HTTP redirection.
 - Add connection timeout
