@@ -30,6 +30,9 @@ std::ostream& operator<<(std::ostream& os, HttpStatus const& error)
     case 301:
         os << "Moved Permanently";
         break;
+    case 307:
+        os << "Temporary Redirect";
+        break;
     case 308:
         os << "Permanent Redirect";
         break;

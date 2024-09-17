@@ -2,7 +2,6 @@
 
 - Handle HTTP redirection.
 - Test connection timeout
-- Close keep-alive connection on error.
 
 # ERRORS
 
@@ -10,4 +9,4 @@
 - Segfault when attempting to request using HTTPS (e.g. `https://localhost:9999`)
 - Weird bug when uploading file
 - Segfault when trying to use DELETE with a form
-<!-- - `411 Length required` on DELETE request -->
+- Bug when `root` or `default` is missing

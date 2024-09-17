@@ -37,7 +37,6 @@ public:
     void quit();
 
     void close_connection(Connection& conn);
-    void keep_alive(Connection& conn);
 
 private:
     int m_epollFd;
