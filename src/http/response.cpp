@@ -233,5 +233,9 @@ Response Response::http_error(HttpStatus status, ServerConfig& config, const cha
         response.add_param("Content-Length", to_string(response.m_body->file_size()));
     }
 
+    // TODO:
+    if (response.status().code() >= 400)
+        response.add_param("Connection", "close");
+
     return response;
 }

@@ -267,14 +267,12 @@ void Webserv::poll_events()
             response.send(events[i].data.fd, host.config());
             delete response.body();
 
-            conn.set_epollin(m_epollFd);
-
             // Close the connection if the client either close the connection or don't want to keep
             // it alive.
-            if (!req.is_keep_alive() || req.is_closed())
+            if (!req.is_keep_alive() || req.is_closed() || response.get_param("Connection") == "close")
                 close_connection(conn);
             else
-                keep_alive(conn);
+                conn.set_epollin(m_epollFd);
         }
     }
 
@@ -307,16 +305,6 @@ void Webserv::close_connection(Connection& conn)
         ws::log << ws::err << FILE_INFO << "epoll_ctl(EPOLL_CTL_DEL) failed: " << strerror(errno) << "\n";
     close(conn.fd());
     m_connections.erase(m_connections.find(conn.fd()));
-}
-
-void Webserv::keep_alive(Connection& conn)
-{
-    struct epoll_event event;
-    event.events = EPOLLIN | EPOLLRDHUP | EPOLLHUP | EPOLLERR;
-    event.data.fd = conn.fd();
-
-    if (epoll_ctl(m_epollFd, EPOLL_CTL_MOD, conn.fd(), &event) == -1)
-        std::cerr << NRED << strerror(errno) << RED << ": epoll_ctl() failed." << RESET << std::endl;
 }
 
 bool Webserv::has_server(struct sockaddr_in addr)

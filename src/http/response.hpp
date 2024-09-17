@@ -23,6 +23,12 @@ public:
     static Response from_cgi(HttpStatus status, std::string str);
 
     void add_param(std::string key, std::string value);
+
+    std::string& get_param(const std::string& key)
+    {
+        return m_params[key];
+    }
+
     void send(int conn, ServerConfig& config);
 
     HttpStatus status();

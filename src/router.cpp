@@ -210,21 +210,11 @@ void Router::_upload_files(std::string& req_str)
 
 Response Router::_route_with_location(Request& req, Location& loc, std::string& req_str)
 {
-    // FIXME: THIS IS BROKEN (ALSO FUCK BROWSER CACHE)
-
     Option<std::string> res = loc.redirect();
     if (res.is_some())
     {
         HttpStatus code = 307;
 
-        // if (req.method() == GET || req.method() == HEAD)
-        // {
-        //     code = 301;
-        // }
-        // else if (req.method() == POST)
-        // {
-        //     code = 308;
-        // }
         Response response = Response::ok(code, new StringFile("", ""));
         response.add_param("Location", res.unwrap());
         return response;
@@ -313,13 +303,15 @@ Response Router::_delete_file(Request& req, Location& loc, std::string& path)
 
 Response Router::route(Request& req, std::string& req_str)
 {
-    std::string path = req.path();
+    std::string& path = req.path();
 
     if (m_config.locations().size() == 0)
         return HTTP_ERROR(404, m_config);
 
-    Location& best_match_loc = m_config.locations()[0];
+    Location best_match_loc = m_config.locations()[0];
     size_t best_match = -1;
+
+    // std::cout << m_config.locations()[0].route() << ", " << m_config.locations()[1].route() << "\n";
 
     for (std::vector<Location>::iterator it = m_config.locations().begin(); it != m_config.locations().end(); it++)
     {
