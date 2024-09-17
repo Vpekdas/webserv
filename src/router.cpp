@@ -1,5 +1,7 @@
 #include <cctype>
 #include <cstddef>
+#include <fstream>
+#include <ios>
 #include <iostream>
 #include <map>
 #include <string>
@@ -144,35 +146,48 @@ Response Router::_directory_listing(Request& req, Location& loc, std::string& pa
     return Response::ok(200, new StringFile(source2, File::mime_from_ext("html")));
 }
 
-void Router::_upload_files(std::string& req_str)
+void Router::_upload_files(Location& loc, std::string& req_str)
 {
     size_t i = 0;
 
     // std::cout << req_str << std::endl;
     std::string boundary = req_str.substr(i, 60);
+    std::string endBoundary = req_str.substr(i, 58) + "--";
+
     while (i != std::string::npos)
     {
         size_t headerStart = i + boundary.size();
-
         size_t contentStart = req_str.find("\r\n\r\n", headerStart) + 4;
 
-        if (contentStart == std::string::npos)
-            break;
+        Request req = Request::parse_part(req_str.substr(headerStart, contentStart - headerStart)).unwrap();
+
+        std::string& contentDisp = req.get_param("Content-Disposition");
+        size_t filenameStart = contentDisp.find("filename=") + 10;
+        std::string filename = contentDisp.substr(
+            filenameStart, contentDisp.find('\"', contentDisp.find("filename=") + 10) - filenameStart);
+        std::cout << filename << "\n";
+
         size_t contentEnd = req_str.find(boundary, contentStart);
         if (contentEnd == std::string::npos)
-            break;
+            contentEnd = req_str.find(endBoundary, contentStart);
 
-        // Request partReq = Request::parse_part(req_str.substr(headerStart, pos + 2 - headerStart)).unwrap();
         i = req_str.find(boundary, contentEnd);
-        std::cout << req_str.substr(contentStart, (contentEnd - 2) - contentStart);
 
-        // std::string& contentDisp = partReq.get_param("Content-Disposition");
-        // std::cout << contentDisp << "\n";
-        // std::string filename = contentDisp.substr(contentDisp.find("filename=") + 10,
-        //                                           contentDisp.find('"', contentDisp.find("filename=") + 10));
-        // std::cout << filename << "\n";
+        std::string str = req_str.substr(contentStart, contentEnd - contentStart);
+        std::string filepath = loc.upload_dir() + "/" + filename;
 
-        // pos + 4 ===> i
+        std::ofstream file(filepath.c_str(), std::ios_base::binary);
+        file.write(str.data(), str.size());
+
+        if (contentEnd == std::string::npos)
+        {
+            // NOTE: Unreachable if the http request is correctly formatted.
+            break;
+        }
+        if (req_str.substr(contentEnd, 60) == endBoundary)
+        {
+            break;
+        }
     }
 
     // int boundaryPos = header.find("--");
@@ -266,9 +281,10 @@ Response Router::_route_with_location(Request& req, Location& loc, std::string& 
             return HTTP_ERROR(404, m_config);
     }
 
-    if (req.method() == POST && req.get_param("Content-Type").find("multipart/form-data") == 0)
+    if (req.method() == POST &&
+        req.get_param("Content-Type").find("multipart/form-data") == 0 /*TODO: && loc.has_upload_dir() */)
     {
-        _upload_files(req_str);
+        _upload_files(loc, req_str);
     }
 
     std::string ext = final_path.substr(final_path.rfind('.') + 1);

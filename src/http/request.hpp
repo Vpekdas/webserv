@@ -3,6 +3,7 @@
 #include "result.hpp"
 #include <cstdlib>
 #include <map>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -50,6 +51,18 @@ public:
 
     std::string& get_param(std::string key);
     bool has_param(std::string key);
+
+    std::string params()
+    {
+        std::stringstream ss;
+
+        for (std::map<std::string, std::string>::iterator it = m_params.begin(); it != m_params.end(); it++)
+        {
+            ss << it->first << ": " << it->second << "\n";
+        }
+
+        return ss.str();
+    }
 
     bool is_keep_alive()
     {

@@ -104,7 +104,7 @@ Result<Request, int> Request::parse_part(std::string header)
     std::vector<std::string> lines = split(header, "\r\n");
 
     Request req;
-    req._parse_params(lines);
+    req._parse_params(lines, 0, true);
     return req;
 }
 
