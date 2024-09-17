@@ -159,13 +159,8 @@ Result<std::string, HttpStatus> CGI::process(std::string filepath, Request& req,
         close(m_stdout[0]);
         close(m_stdin[1]);
 
-        std::cout << str << "\n";
-
         if (!WIFEXITED(stat_loc) || WEXITSTATUS(stat_loc) != 0 || n == -1)
-        {
-            // std::cout << str << "\n";
             return HttpStatus(500);
-        }
 
         return str;
     }

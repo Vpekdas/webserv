@@ -19,7 +19,7 @@
     } else
     {
 ?>
-        <p>Welcome <?= $_SESSION["username"] ?> </p>
+        <p>Welcome <?= $_SESSION["username"] ?> <a href="/logout.php">Logout</a></p>
 <?php
     }
 ?>

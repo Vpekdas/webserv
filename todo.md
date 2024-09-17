@@ -1,8 +1,8 @@
 # TODOS
 
-- Session management
 - Handle HTTP redirection.
-- Add connection timeout
+- Test connection timeout
+- Close keep-alive connection on error.
 
 # ERRORS
 
