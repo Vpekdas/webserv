@@ -2,6 +2,7 @@
 
 - Handle HTTP redirection.
 - Test connection timeout
+- IOT core dumped when trying to upload godot.
 
 # ERRORS
 
