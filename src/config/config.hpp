@@ -30,7 +30,7 @@ public:
         return m_route;
     }
 
-    std::string& root()
+    Option<std::string>& root()
     {
         return m_root;
     }
@@ -50,7 +50,7 @@ public:
         return m_cgis;
     }
 
-    std::string& upload_dir()
+    Option<std::string>& upload_dir()
     {
         return m_upload_directory;
     }
@@ -64,12 +64,12 @@ private:
     std::string m_route;
 
     std::vector<Method> m_methods;
-    std::string m_root;
+    Option<std::string> m_root;
     bool m_enable_indexing;
     /* Default page returned if a directory is returned. */
     std::string m_default;
     std::map<std::string, std::string> m_cgis;
-    std::string m_upload_directory;
+    Option<std::string> m_upload_directory;
 
     Option<std::string> m_redirect;
 };

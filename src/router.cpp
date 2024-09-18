@@ -150,7 +150,6 @@ void Router::_upload_files(Location& loc, std::string& req_str)
 {
     size_t i = 0;
 
-    // std::cout << req_str << std::endl;
     std::string boundary = req_str.substr(i, 60);
     std::string endBoundary = req_str.substr(i, 58) + "--";
 
@@ -174,7 +173,7 @@ void Router::_upload_files(Location& loc, std::string& req_str)
         i = req_str.find(boundary, contentEnd);
 
         std::string str = req_str.substr(contentStart, contentEnd - contentStart);
-        std::string filepath = loc.upload_dir() + "/" + filename;
+        std::string filepath = loc.upload_dir().unwrap() + "/" + filename;
 
         std::ofstream file(filepath.c_str(), std::ios_base::binary);
         file.write(str.data(), str.size());
@@ -189,38 +188,6 @@ void Router::_upload_files(Location& loc, std::string& req_str)
             break;
         }
     }
-
-    // int boundaryPos = header.find("--");
-
-    // // skip --
-    // while (header[boundaryPos] && header[boundaryPos] == '-')
-    //     boundaryPos++;
-
-    // // copy all digit after -- till the end
-    // std::string boundary;
-
-    // while (header[boundaryPos] && std::isdigit(header[boundaryPos]))
-    // {
-    //     boundary += header[boundaryPos];
-    //     boundaryPos++;
-    // }
-
-    // // std::ofstream file((loc.upload_dir() + "/" + fileName).c_str(), std::ios::binary);
-    // if (m_boundaries.find(boundary) == m_boundaries.end())
-    // {
-    //     int fd = open((loc.upload_dir() + "/" + fileName).c_str(), O_WRONLY | O_CREAT | O_APPEND, 0644);
-    //     if (fd != -1)
-    //         m_boundaries[boundary] = fd;
-    // }
-
-    // if (m_boundaries.find(boundary) != m_boundaries.end())
-    // {
-    //     if (write(m_boundaries.find(boundary)->second, body.c_str(), body.size()) == 0)
-    //         close(m_boundaries.find(boundary)->second);
-    //     // file.write(body.c_str(), body.size());
-    //     // file.close();
-    // }
-    // boundary.clear();
 }
 
 Response Router::_route_with_location(Request& req, Location& loc, std::string& req_str)
@@ -248,8 +215,13 @@ Response Router::_route_with_location(Request& req, Location& loc, std::string& 
     if (n == 0)
         return HTTP_ERROR(405, m_config); // Method not allowed
 
+    if (loc.root().is_none())
+    {
+        return HTTP_ERROR(404, m_config);
+    }
+
     struct stat sb;
-    std::string path = loc.root() + "/" + req.path().substr(loc.route().size());
+    std::string path = loc.root().unwrap() + "/" + req.path().substr(loc.route().size());
     std::string final_path;
 
     if (stat(path.c_str(), &sb) == -1)
@@ -271,8 +243,8 @@ Response Router::_route_with_location(Request& req, Location& loc, std::string& 
             return HTTP_ERROR(404, m_config);
     }
 
-    if (req.method() == POST &&
-        req.get_param("Content-Type").find("multipart/form-data") == 0 /*TODO: && loc.has_upload_dir() */)
+    if (req.method() == POST && req.get_param("Content-Type").find("multipart/form-data") == 0 &&
+        loc.upload_dir().is_some())
     {
         _upload_files(loc, req_str);
     }
@@ -311,7 +283,8 @@ Response Router::_delete_file(Request& req, Location& loc, std::string& path)
         return HTTP_ERROR(404, m_config);
     if (unlink(path.c_str()) == -1)
     {
-        ws::log << ws::err << "Cannot delete file " << loc.root() << "/" << path << ": " << strerror(errno) << "\n ";
+        ws::log << ws::err << "Cannot delete file " << loc.root().unwrap() << "/" << path << ": " << strerror(errno)
+                << "\n ";
         return HTTP_ERROR(500, m_config);
     }
     return HTTP_ERROR(200, m_config);

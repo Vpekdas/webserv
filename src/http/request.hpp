@@ -43,7 +43,6 @@ public:
     static Result<Request, int> parse_part(std::string header);
 
     Request();
-    Request copy_with(std::string path);
 
     bool is_coffee()
     {

@@ -108,14 +108,6 @@ Result<Request, int> Request::parse_part(std::string header)
     return req;
 }
 
-Request Request::copy_with(std::string path)
-{
-    Request req = *this;
-
-    req.m_path = path;
-    return req;
-}
-
 void Request::set_args(std::string param)
 {
     _parse_path(param);
