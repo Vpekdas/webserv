@@ -46,6 +46,8 @@ void Request::_parse_params(std::vector<std::string>& lines, size_t i, bool igno
     (void)ignore_invalid;
     for (; i < lines.size(); i++)
     {
+        if (lines[i].empty())
+            continue;
         size_t comma = lines[i].find(":");
         std::string key = trim(lines[i].substr(0, comma));
         std::string value = trim(lines[i].substr(comma + 1));

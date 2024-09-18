@@ -176,6 +176,7 @@ void Webserv::poll_events()
             {
                 Request req = Request::parse(req_str).unwrap();
                 conn.set_last_request(req);
+                conn.set_body(true);
 
                 std::string host_str = req.get_param("Host").substr(0, req.get_param("Host").find(':'));
                 Host& host = m_servers[conn.sock_fd()].default_host();
@@ -188,6 +189,8 @@ void Webserv::poll_events()
                     conn.set_bytes_read(leftovers.size());
                     conn.set_req_str(leftovers);
                 }
+
+                // std::cout << "qwdqwkdklqwhdkjqwhdqwkjhd\n";
 
                 if (!req.has_param("Content-Length") || leftovers.size() > host.config().max_content_length() ||
                     leftovers.size() > req.content_length())
@@ -209,6 +212,12 @@ void Webserv::poll_events()
                 if (conn.bytes_read() > host.config().max_content_length() || conn.bytes_read() > req.content_length())
                     conn.set_epollout(m_epollFd);
             }
+            else
+            {
+                ws::log << ws::dbg << "Malformated HTTP request\n";
+                close_connection(conn);
+                continue;
+            }
 
             if (n < READ_SIZE)
                 conn.set_epollout(m_epollFd);
@@ -224,9 +233,6 @@ void Webserv::poll_events()
 
             if (m_servers[conn.sock_fd()].has_host(host_str))
                 host = m_servers[conn.sock_fd()].host(host_str);
-
-            if (req.method() == POST && req.content_type() == "application/x-www-form-urlencoded")
-                req.set_args(conn.req_str());
 
             Response response;
             // In our case only `POST` requests have a body. Other requests will not set a `Content-Length`.
@@ -253,6 +259,8 @@ void Webserv::poll_events()
             }
 
             conn.req_str().clear();
+            conn.set_bytes_read(0);
+            conn.set_body(false);
 
             if (req.is_keep_alive())
                 response.add_param("Connection", "keep-alive");

@@ -150,8 +150,9 @@ void Router::_upload_files(Location& loc, std::string& req_str)
 {
     size_t i = 0;
 
-    std::string boundary = req_str.substr(i, 60);
-    std::string endBoundary = req_str.substr(i, 58) + "--";
+    size_t boundarySize = req_str.find(SEP);
+    std::string boundary = req_str.substr(i, boundarySize + 2);
+    std::string endBoundary = req_str.substr(i, boundarySize) + "--";
 
     while (i != std::string::npos)
     {
@@ -159,6 +160,7 @@ void Router::_upload_files(Location& loc, std::string& req_str)
         size_t contentStart = req_str.find("\r\n\r\n", headerStart) + 4;
 
         Request req = Request::parse_part(req_str.substr(headerStart, contentStart - headerStart)).unwrap();
+        std::cout << req.params() << "\n";
 
         std::string& contentDisp = req.get_param("Content-Disposition");
         size_t filenameStart = contentDisp.find("filename=") + 10;
@@ -175,7 +177,13 @@ void Router::_upload_files(Location& loc, std::string& req_str)
         std::string str = req_str.substr(contentStart, contentEnd - contentStart);
         std::string filepath = loc.upload_dir().unwrap() + "/" + filename;
 
-        std::ofstream file(filepath.c_str(), std::ios_base::binary);
+        if (filename.empty())
+        {
+            ws::log << ws::dbg << "File name empty for upload\n";
+            continue;
+        }
+
+        std::ofstream file(filepath.c_str(), std::ios_base::binary | std::ios_base::trunc);
         file.write(str.data(), str.size());
 
         if (contentEnd == std::string::npos)
