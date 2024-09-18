@@ -23,7 +23,6 @@ public:
 
 private:
     std::map<std::string, CGI> m_cgis;
-    std::map<std::string, int> m_boundaries;
     ServerConfig m_config;
 
     Response _route_with_location(Request& req, Location& loc, std::string& req_str);

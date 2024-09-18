@@ -507,6 +507,12 @@ ConfigError ConfigError::mismatch_curly(std::string source, Token curly)
     return err;
 }
 
+ConfigError ConfigError::address(std::string source, Token addr)
+{
+    ConfigError err(ConfigError::ADDR, addr, source);
+    return err;
+}
+
 ConfigError ConfigError::mismatch_entry(std::string source, Token tok, std::string expected, std::vector<Arg> args)
 {
     ConfigError err(ConfigError::MISMATCH_ENTRY, tok, source);
@@ -564,6 +570,9 @@ std::string ConfigError::_strerror()
             list += ", `" + m_unknown.entries[i] + "`";
 
         return "Unknown entry `" + m_token.content() + "` expected one of " + list;
+    }
+    case ADDR: {
+        return ("Invalid address");
     }
     }
 }

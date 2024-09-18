@@ -1,5 +1,6 @@
 #include "webserv.hpp"
 #include "config/config.hpp"
+#include "connection.hpp"
 #include "http/request.hpp"
 #include "http/response.hpp"
 #include "logger.hpp"
@@ -9,6 +10,7 @@
 #include <cstring>
 #include <exception>
 #include <iostream>
+#include <netinet/in.h>
 #include <unistd.h>
 
 Webserv::Webserv() : m_running(true)
@@ -80,16 +82,29 @@ void Webserv::eventLoop()
     for (size_t i = 0; i < m_config.servers().size(); i++)
     {
         ServerConfig& config = m_config.servers()[i];
-        std::string host = config.server_name();
 
-        if (has_server(config.listen_addr()))
+        if (config.server_name().is_none() || config.server_name().unwrap().empty())
         {
-            Server& server = get_server(config.listen_addr());
+            ws::log << ws::err << "Missing `server_name` in config\n";
+            continue;
+        }
+
+        if (config.listen_addr().is_none())
+        {
+            ws::log << ws::err << "Missing `listen_addr` in config\n";
+            continue;
+        }
+
+        std::string host = config.server_name().unwrap();
+
+        if (has_server(config.listen_addr().unwrap()))
+        {
+            Server& server = get_server(config.listen_addr().unwrap());
             server.add_host(host, config);
         }
         else
         {
-            Server server(config.listen_addr());
+            Server server(config.listen_addr().unwrap());
             server.add_host(host, config);
 
             struct epoll_event socket_event;
@@ -105,7 +120,15 @@ void Webserv::eventLoop()
             m_servers[server.sock_fd()] = server;
         }
 
-        ws::log << ws::info << "Host " BIWHITE << host << RESET " listening on " << config.listen_addr() << "\n";
+        struct sockaddr_in addr = config.listen_addr().unwrap();
+        ws::log << ws::info << "Host " BIWHITE << host << RESET " listening on " << addr << "\n";
+    }
+
+    if (m_servers.empty())
+    {
+        ws::log << ws::err << "No server in config, stopping...\n";
+        close(m_epollFd);
+        return;
     }
 
     while (m_running)
@@ -114,12 +137,12 @@ void Webserv::eventLoop()
     }
 
     // Close all servers currently listening.
-    // for (size_t i = 0; i < m_servers.size(); i++)
-    //     close(m_servers[i].sock_fd());
+    for (std::map<int, Server>::iterator it = m_servers.begin(); it != m_servers.end(); it++)
+        close(it->second.sock_fd());
 
     // Close all remaining connections.
-    // for (size_t i = 0; i < m_connections.size(); i++)
-    //     close(m_connections[i].fd());
+    for (std::map<int, Connection>::iterator it = m_connections.begin(); it != m_connections.end(); it++)
+        close(it->second.fd());
 
     close(m_epollFd);
 }
@@ -134,7 +157,11 @@ void Webserv::poll_events()
     {
         if (m_servers.count(events[i].data.fd) > 0)
         {
-            Connection conn = acceptConnection(events[i].data.fd).unwrap();
+            Result<Connection, int> res = acceptConnection(events[i].data.fd);
+            if (res.is_err())
+                continue;
+
+            Connection conn = res.unwrap();
             conn.set_last_event(time());
             m_connections[conn.fd()] = conn;
             continue;

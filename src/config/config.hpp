@@ -40,7 +40,7 @@ public:
         return m_enable_indexing;
     }
 
-    std::string& default_page()
+    Option<std::string>& default_page()
     {
         return m_default;
     }
@@ -67,7 +67,7 @@ private:
     Option<std::string> m_root;
     bool m_enable_indexing;
     /* Default page returned if a directory is returned. */
-    std::string m_default;
+    Option<std::string> m_default;
     std::map<std::string, std::string> m_cgis;
     Option<std::string> m_upload_directory;
 
@@ -85,12 +85,12 @@ public:
 
     virtual Result<int, ConfigError> deserialize(ConfigEntry& from);
 
-    std::string& server_name()
+    Option<std::string>& server_name()
     {
         return m_server_name;
     }
 
-    struct sockaddr_in& listen_addr()
+    Option<struct sockaddr_in>& listen_addr()
     {
         return m_listen_addr;
     }
@@ -121,8 +121,8 @@ public:
     }
 
 private:
-    std::string m_server_name;
-    struct sockaddr_in m_listen_addr;
+    Option<std::string> m_server_name;
+    Option<struct sockaddr_in> m_listen_addr;
     std::map<int, std::string> m_error_pages;
 
     /* Maximum accepted `Content-Length` */

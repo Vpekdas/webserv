@@ -163,14 +163,21 @@ Result<int, ConfigError> ServerConfig::deserialize(ConfigEntry& from)
         else if (name == "listen" && entry.is_inline() && entry.args().size() == 2 &&
                  entry.args()[1].type() == TOKEN_STRING)
         {
+            if (entry.args()[1].str().empty())
+                return ConfigError::address(entry.source(), entry.args()[1]);
+
             std::vector<std::string> parts = split(entry.args()[1].str(), ':');
             std::vector<std::string> ip_parts = split(parts[0], '.');
 
-            m_listen_addr.sin_family = AF_INET;
-            m_listen_addr.sin_port = htons(std::atoi(parts[1].c_str()));
-            m_listen_addr.sin_addr.s_addr =
+            struct sockaddr_in listen_addr;
+            listen_addr.sin_family = AF_INET;
+
+            int port = std::atoi(parts[1].c_str());
+            listen_addr.sin_port = htons(port);
+            listen_addr.sin_addr.s_addr =
                 (in_addr_t)(std::atoi(ip_parts[0].c_str()) << 24 | std::atoi(ip_parts[1].c_str()) << 16 |
                             std::atoi(ip_parts[2].c_str()) << 8 | std::atoi(ip_parts[3].c_str()));
+            m_listen_addr = listen_addr;
         }
         else if (name == "error_page" && entry.is_inline() && entry.args().size() == 3 &&
                  entry.args()[1].type() == TOKEN_NUMBER && entry.args()[2].type() == TOKEN_STRING)

@@ -160,13 +160,11 @@ void Router::_upload_files(Location& loc, std::string& req_str)
         size_t contentStart = req_str.find("\r\n\r\n", headerStart) + 4;
 
         Request req = Request::parse_part(req_str.substr(headerStart, contentStart - headerStart)).unwrap();
-        std::cout << req.params() << "\n";
 
         std::string& contentDisp = req.get_param("Content-Disposition");
         size_t filenameStart = contentDisp.find("filename=") + 10;
         std::string filename = contentDisp.substr(
             filenameStart, contentDisp.find('\"', contentDisp.find("filename=") + 10) - filenameStart);
-        std::cout << filename << "\n";
 
         size_t contentEnd = req_str.find(boundary, contentStart);
         if (contentEnd == std::string::npos)
@@ -236,7 +234,7 @@ Response Router::_route_with_location(Request& req, Location& loc, std::string& 
         return HTTP_ERROR(404, m_config);
 
     if (S_ISDIR(sb.st_mode))
-        final_path = path + "/" + loc.default_page();
+        final_path = path + "/" + loc.default_page().unwrap_or("index.html");
     else
         final_path = path;
 

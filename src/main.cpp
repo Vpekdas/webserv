@@ -24,7 +24,7 @@ int main(int argc, char *argv[], char *envp[])
 
     if (argc != 2)
     {
-        ws::log << ws::err << "Missing configuration file\n";
+        ws::log << ws::err << "Incorrect number of arguments.\n";
         return 1;
     }
 
