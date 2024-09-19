@@ -136,6 +136,11 @@ void Webserv::eventLoop()
         poll_events();
     }
 
+    closeFds();
+}
+
+void Webserv::closeFds()
+{
     // Close all servers currently listening.
     for (std::map<int, Server>::iterator it = m_servers.begin(); it != m_servers.end(); it++)
         close(it->second.sock_fd());
@@ -170,7 +175,7 @@ void Webserv::poll_events()
         if ((events[i].events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR)))
         {
             Connection& conn = m_connections[events[i].data.fd];
-            close_connection(conn);
+            closeConnection(conn);
             continue;
         }
 
@@ -190,7 +195,7 @@ void Webserv::poll_events()
             if (n == -1)
             {
                 ws::log << ws::err << "recv() failed: " << strerror(errno) << "\n";
-                close_connection(conn);
+                closeConnection(conn);
                 continue;
             }
 
@@ -242,7 +247,7 @@ void Webserv::poll_events()
             else
             {
                 ws::log << ws::dbg << "Malformated HTTP request\n";
-                close_connection(conn);
+                closeConnection(conn);
                 continue;
             }
 
@@ -305,7 +310,7 @@ void Webserv::poll_events()
             // Close the connection if the client either close the connection or don't want to keep
             // it alive.
             if (!req.is_keep_alive() || req.is_closed() || response.get_param("Connection") == "close")
-                close_connection(conn);
+                closeConnection(conn);
             else
                 conn.set_epollin(m_epollFd);
         }
@@ -322,7 +327,7 @@ void Webserv::poll_events()
             Connection& conn = it->second;
             if (conn.get_last_event() - time() > TIMEOUT)
             {
-                close_connection(conn);
+                closeConnection(conn);
                 ws::log << ws::dbg << "Connection " << conn.addr() << " timed out\n";
                 break;
             }
@@ -334,7 +339,7 @@ void Webserv::poll_events()
     }
 }
 
-void Webserv::close_connection(Connection& conn)
+void Webserv::closeConnection(Connection& conn)
 {
     if (epoll_ctl(m_epollFd, EPOLL_CTL_DEL, conn.fd(), NULL) == -1)
         ws::log << ws::err << FILE_INFO << "epoll_ctl(EPOLL_CTL_DEL) failed: " << strerror(errno) << "\n";

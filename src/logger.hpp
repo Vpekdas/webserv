@@ -22,7 +22,7 @@ class Logger
 public:
     void init()
     {
-        m_file_stream.open("webserv.log");
+        // m_file_stream.open("webserv.log");
     }
 
     void print(std::string value)

@@ -115,14 +115,17 @@ Result<std::string, HttpStatus> CGI::process(std::string filepath, Request& req,
         }
         env2[envp.size()] = NULL;
 
+        close(m_stdout[0]);
+        close(m_stdout[1]);
+        close(m_stdin[0]);
+        close(m_stdin[1]);
+
+        g_webserv.closeFds();
+
         // TODO: maybe use chdir here.
 
         if (execve(m_path.c_str(), (char **)argv, (char **)env2) == -1)
         {
-            close(m_stdout[0]);
-            close(m_stdout[1]);
-            close(m_stdin[0]);
-            close(m_stdin[1]);
             for (size_t i = 0; env2[i]; i++)
                 free(env2[i]);
             free(env2);
@@ -144,6 +147,9 @@ Result<std::string, HttpStatus> CGI::process(std::string filepath, Request& req,
             {
                 kill(m_pid, SIGQUIT);
                 ws::log << ws::warn << "CGI `" << m_path << "` timed out\n";
+                close(m_stdout[1]);
+                close(m_stdout[0]);
+                close(m_stdin[0]);
                 return HttpStatus(500);
             }
         }
@@ -157,7 +163,7 @@ Result<std::string, HttpStatus> CGI::process(std::string filepath, Request& req,
             str.append(buf, n);
 
         close(m_stdout[0]);
-        close(m_stdin[1]);
+        close(m_stdin[0]);
 
         if (!WIFEXITED(stat_loc) || WEXITSTATUS(stat_loc) != 0 || n == -1)
             return HttpStatus(500);

@@ -36,7 +36,8 @@ public:
 
     void quit();
 
-    void close_connection(Connection& conn);
+    void closeConnection(Connection& conn);
+    void closeFds();
 
 private:
     int m_epollFd;
@@ -52,6 +53,8 @@ private:
     bool has_server(struct sockaddr_in addr);
     Server& get_server(struct sockaddr_in addr);
 };
+
+extern Webserv g_webserv;
 
 inline int64_t time()
 {

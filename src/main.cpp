@@ -2,7 +2,7 @@
 #include "webserv.hpp"
 #include <csignal>
 
-static Webserv webserv;
+Webserv g_webserv;
 char **g_envp;
 
 void sigpipe(int signum)
@@ -15,7 +15,7 @@ void signal_handler(int signum)
 {
     (void)signum;
     ws::log << ws::info << "Shutdown...\n";
-    webserv.quit();
+    g_webserv.quit();
 }
 
 int main(int argc, char *argv[], char *envp[])
@@ -36,7 +36,7 @@ int main(int argc, char *argv[], char *envp[])
     File::_build_mime_table();
     Response::_build_themes();
 
-    if (webserv.initialize(argv[1]) != 0)
+    if (g_webserv.initialize(argv[1]) != 0)
         return 1;
-    webserv.eventLoop();
+    g_webserv.eventLoop();
 }
