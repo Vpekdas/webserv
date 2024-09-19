@@ -207,7 +207,7 @@ void Webserv::poll_events()
                 Request req = Request::parse(header).unwrap();
                 size_t contentLength = req.content_length();
 
-                if (conn.req_str().size() >= contentLength)
+                if (req.method() != POST || conn.req_str().size() >= contentLength)
                     conn.set_epollout(m_epollFd);
             }
 
