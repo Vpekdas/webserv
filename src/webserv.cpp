@@ -201,29 +201,26 @@ void Webserv::poll_events()
 
             req_str.append(buf, n);
 
-            if (req_str.find(SEP SEP) != std::string::npos)
+            if (conn.req().is_some() || req_str.find(SEP SEP) != std::string::npos)
             {
-                std::string header = req_str.substr(0, req_str.find(SEP SEP) + 4);
-                Request req = Request::parse(header).unwrap();
+                Request req;
+
+                if (conn.req().is_some())
+                {
+                    req = conn.req().unwrap();
+                }
+                else
+                {
+                    std::string header = req_str.substr(0, req_str.find(SEP SEP) + 4);
+                    conn.setReq(Request::parse(header).unwrap()); // TODO:
+                    req = conn.req().unwrap();
+                }
+
                 size_t contentLength = req.content_length();
 
                 if (req.method() != POST || conn.req_str().size() >= contentLength)
                     conn.set_epollout(m_epollFd);
             }
-
-            // Host& host = m_servers[conn.sock_fd()].default_host();
-
-            // if (n < READ_SIZE || (headerSize != std::string::npos &&
-            //                       (conn.req_str().size() - headerSize > host.config().max_content_length() &&
-            //                        host.config().max_content_length() > 0)))
-            // {
-            //     conn.set_epollout(m_epollFd);
-            // }
-
-            // std::cout << n << "\n";
-
-            // if (n < READ_SIZE && conn.req_str().size() > 100000000)
-            //     conn.set_epollout(m_epollFd);
         }
 
         else if ((events[i].events & EPOLLOUT))

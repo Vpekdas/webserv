@@ -4,6 +4,7 @@
 #include <sys/epoll.h>
 
 #include "http/request.hpp"
+#include "option.hpp"
 
 class Connection
 {
@@ -44,6 +45,21 @@ public:
         return m_last_event;
     }
 
+    void setReq(Request req)
+    {
+        m_req = req;
+    }
+
+    Option<Request>& req()
+    {
+        return m_req;
+    }
+
+    void clearReq()
+    {
+        m_req = Option<Request>();
+    }
+
     void set_epollin(int epoll_fd);
     void set_epollout(int epoll_fd);
 
@@ -55,4 +71,5 @@ private:
     std::string m_reqStr;
 
     int64_t m_last_event;
+    Option<Request> m_req;
 };
