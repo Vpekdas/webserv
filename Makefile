@@ -125,14 +125,10 @@ define GET_G_GRADIENT
 $(word $(1),$(GRADIENT_G))
 endef
 
-all: $(NAME) sites/demo/rust/index.rsc
-
-sites/rust/index.rsc:
-	cd rust && cargo build --release
-	cp rust/target/release/rust sites/demo/rust/index.rsc
+all: $(NAME)
 
 portfolio:
-	git clone https://github.com/Vpekdas/Vpekdas.github.io sites/portfolio
+	git clone https://github.com/Vpekdas/Vpekdas.github.io sites/portfolio && cd sites/portfolio && npm install && npm run build
 
 extra: portfolio
 

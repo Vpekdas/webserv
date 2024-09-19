@@ -218,7 +218,7 @@ void Webserv::poll_events()
 
                 size_t contentLength = req.content_length();
 
-                if (req.method() != POST || conn.req_str().size() >= contentLength)
+                if (req.method() != POST || conn.req_str().size() - req.header_size() >= contentLength)
                     conn.set_epollout(m_epollFd);
             }
         }
@@ -231,6 +231,7 @@ void Webserv::poll_events()
             if (res.is_err())
             {
                 ws::log << ws::dbg << "Invalid HTTP request\n";
+                ws::log << conn.req_str() << "\n";
                 closeConnection(conn);
                 continue;
             }
@@ -268,10 +269,8 @@ void Webserv::poll_events()
                 }
             }
 
-            // std::cout << conn.req_str().substr(0, 200) << "\n";
-            // std::cout << conn.bytes_read() << "\n";
-
             conn.req_str().clear();
+            conn.clearReq();
 
             if (req.is_keep_alive())
                 response.add_param("Connection", "keep-alive");

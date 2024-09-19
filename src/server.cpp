@@ -16,9 +16,9 @@ Server::Server(struct sockaddr_in addr) : m_addr(addr)
 
     // By doing this, we can use the same port after relaunching the web server.
     // Without it, the port remains in use for a while.
-    int b = true;
-    if (setsockopt(m_sock_fd, SOL_SOCKET, SO_REUSEPORT, &b, sizeof(int)) == -1)
-        ws::log << ws::err << "setsockopt() failed: " << strerror(errno) << "\n";
+    // int b = true;
+    // if (setsockopt(m_sock_fd, SOL_SOCKET, SO_REUSEPORT, &b, sizeof(int)) == -1)
+    //     ws::log << ws::err << "setsockopt() failed: " << strerror(errno) << "\n";
 
     if (bind(m_sock_fd, (struct sockaddr *)&addr, sizeof(struct sockaddr_in)) == -1)
         ws::log << ws::err << "bind() failed: " << strerror(errno) << "\n";

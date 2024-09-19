@@ -59,7 +59,7 @@ public:
             return m_path;
         }
 
-        return mime_from_ext(m_path.substr(m_path.rfind('.')));
+        return mime_from_ext(m_path.substr(m_path.rfind('.') + 1));
     }
 
     /*

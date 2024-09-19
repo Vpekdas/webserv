@@ -182,6 +182,11 @@ void Router::_upload_files(Location& loc, Request& req)
             continue;
         }
 
+        if (access(filepath.c_str(), F_OK) != -1)
+        {
+            continue;
+        }
+
         std::ofstream file(filepath.c_str(), std::ios_base::binary | std::ios_base::trunc);
         file.write(str.data(), str.size());
 
