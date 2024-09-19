@@ -4,59 +4,8 @@
 #include "string.hpp"
 #include <cstdlib>
 #include <iostream>
+#include <unistd.h>
 #include <vector>
-
-// static Result<int, ConfigError> _expect(ConfigEntry& entry, Usage& usage)
-// {
-//     if (!entry.is_inline())
-//         return Err<int, ConfigError>(ConfigError::not_inline(entry.source(), entry.args()[0]));
-//     else if (entry.args().size() - 1 != usage.args().size())
-//         return Err<int, ConfigError>(
-//             ConfigError::mismatch_entry(entry.source(), entry.args()[0], usage.name(), usage.args()));
-//     else if (entry.args()[0].type() != TOKEN_IDENTIFIER || entry.args()[0].content() != usage.name())
-//         return Err<int, ConfigError>(
-//             ConfigError::mismatch_entry(entry.source(), entry.args()[0], usage.name(), usage.args()));
-
-//     for (size_t i = 1; i < usage.args().size(); i++)
-//     {
-//         Token& lhs = entry.args()[i];
-//         Arg& rhs = usage.args()[i];
-
-//         if (lhs.type() != rhs.type())
-//             return Err<int, ConfigError>(
-//                 ConfigError::mismatch_entry(entry.source(), entry.args()[0], usage.name(), usage.args()));
-
-//         if (rhs.type() == TOKEN_STRING)
-//         {
-//             *rhs.ptr<std::string>() = lhs.content();
-//         }
-//         else if (rhs.type() == TOKEN_NUMBER)
-//         {
-//             *rhs.ptr<int>() = lhs.get_int();
-//         }
-//     }
-
-//     return Ok<int, ConfigError>(0);
-// }
-
-// static Result<int, ConfigError> _expect_multiple(ConfigEntry& entry, std::vector<Usage>& usages)
-// {
-//     for (size_t i = 0; i < usages.size(); i++)
-//     {
-//         Result<int, ConfigError> result = _expect(entry, usages[i]);
-//         EXPECT_OK_AND(int, ConfigError, (entry.args()[0].content() == usages[i].name()), result);
-//         if (result.is_ok())
-//             return Ok<int, ConfigError>(0);
-//     }
-
-//     std::vector<std::string> entries;
-//     entries.reserve(usages.size());
-
-//     for (size_t i = 0; i < usages.size(); i++)
-//         entries.push_back(usages[i].name());
-
-//     return Err<int, ConfigError>(ConfigError::unknown_entry(entry.source(), entry.args()[0], entries));
-// }
 
 template <typename T>
 static std::vector<T> _array_to_vec(T array[], size_t size)

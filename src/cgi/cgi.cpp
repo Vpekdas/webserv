@@ -110,6 +110,12 @@ Result<std::string, HttpStatus> CGI::process(std::string filepath, Request& req,
                 for (size_t j = 0; j < i; j++)
                     free(env2[j]);
                 free(env2);
+                close(m_stdout[0]);
+                close(m_stdout[1]);
+                close(m_stdin[0]);
+                close(m_stdin[1]);
+
+                g_webserv.closeFds();
                 exit(1);
             }
         }

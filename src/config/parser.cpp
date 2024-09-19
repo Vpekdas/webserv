@@ -6,41 +6,8 @@
 #include <iomanip>
 #include <iostream>
 #include <ostream>
-
-// Config::Config()
-// {
-// }
-
-// void Config::load_from_file(std::string filename)
-// {
-//     ConfigParser parser;
-//     Result<int, ConfigError> result = parser.parse(filename);
-//     if (result.is_err())
-//         result.unwrap_err().print(std::cerr);
-
-//     for (size_t i = 0; i < parser.root().children().size(); i++)
-//     {
-//         ConfigEntry& entry = parser.root().children()[i];
-
-//         if (entry.args()[0].content() == "Routes")
-//         {
-//             Result<int, ConfigError> result = m_routes.deserialize(entry);
-//             if (result.is_err())
-//                 result.unwrap_err().print(std::cerr);
-//         }
-//         else
-//         {
-//             std::vector<std::string> entries;
-//             entries.push_back("Routes");
-//             ConfigError::unknown_entry(entry.source(), entry.args()[0], entries).print(std::cerr);
-//             break;
-//         }
-//     }
-// }
-
-/*
-    Parsing
- */
+#include <sys/stat.h>
+#include <unistd.h>
 
 Token::Token()
 {
@@ -332,6 +299,10 @@ static Option<Result<ConfigEntry, ConfigError> > _parse(std::string& source, std
 
 Result<int, ConfigError> ConfigParser::parse(std::string filename)
 {
+    struct stat sb;
+
+    if (stat(filename.c_str(), &sb) == -1 || !S_ISREG(sb.st_mode))
+        return Err<int, ConfigError>(ConfigError::not_found(filename));
     std::ifstream ifs(filename.data());
     if (!ifs.is_open())
         return Err<int, ConfigError>(ConfigError::not_found(filename));

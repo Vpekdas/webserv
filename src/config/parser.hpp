@@ -200,6 +200,12 @@ public:
     template <typename S>
     void print(S& os)
     {
+        if (m_type == FILE_NOT_FOUND)
+        {
+            os << "File `" << m_notfound.filename << "` not found\n";
+            return;
+        }
+
         _print_lines(os, m_token.line() - 2, 3);
 
         os << "     ";
