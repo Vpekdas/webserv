@@ -1,78 +1,127 @@
 #pragma once
 
 #include <cstddef>
+#include <fcntl.h>
 #include <map>
 #include <string>
+#include <sys/socket.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 #define FILE_BUFFER_SIZE 8192
 
 class File
 {
 public:
-    virtual ~File()
-    {
-    }
-
     /*
         Returns the file name.
      */
-    virtual std::string& file_name() = 0;
+    std::string& file_name()
+    {
+        return m_path;
+    }
 
     /*
         Returns `true` if the file exists.
      */
-    virtual bool exists() = 0;
+    bool exists()
+    {
+        return m_in_memory || (access(m_path.c_str(), F_OK | R_OK) != -1);
+    }
 
     /*
         Returns the size of the file.
      */
-    virtual size_t file_size() = 0;
+    size_t file_size()
+    {
+        if (m_in_memory)
+        {
+            return m_content.size();
+        }
+
+        struct stat sb;
+
+        if (stat(m_path.c_str(), &sb) == -1)
+        {
+            return 0;
+        }
+
+        return sb.st_size;
+    }
 
     /*
         Return the mime of the file (e.g. `text/html`, `application/json`).
      */
-    virtual std::string mime() = 0;
+    std::string mime()
+    {
+        if (m_in_memory)
+        {
+            return m_path;
+        }
+
+        return mime_from_ext(m_path.substr(m_path.rfind('.')));
+    }
 
     /*
         Send the file through a connection fd with `send`.
      */
-    virtual void send(int conn) = 0;
+    void send(int conn)
+    {
+        if (!m_in_memory)
+        {
+            if (!exists())
+                return;
+
+            char buf[FILE_BUFFER_SIZE];
+            int fd = open(m_path.c_str(), O_RDONLY);
+
+            if (fd == -1)
+                return;
+
+            ssize_t n;
+
+            while ((n = read(fd, buf, FILE_BUFFER_SIZE)) > 0)
+                ::send(conn, buf, n, 0);
+
+            close(fd);
+        }
+        else
+        {
+            ssize_t n;
+
+            n = ::send(conn, m_content.c_str(), file_size(), 0);
+
+            // TODO:
+            // If there is an error.
+            if (n == -1)
+                return;
+        }
+    }
+
+    static File memory(std::string content, std::string mime)
+    {
+        File file;
+        file.m_in_memory = true;
+        file.m_content = content;
+        file.m_path = mime;
+        return file;
+    }
+
+    static File stream(std::string path)
+    {
+        File file;
+        file.m_in_memory = false;
+        file.m_path = path;
+        return file;
+    }
 
     static std::string& mime_from_ext(std::string ext);
     static void _build_mime_table();
 
-protected:
-    static std::map<std::string, std::string> mimes;
-};
-
-class StreamFile : public File
-{
-public:
-    StreamFile(std::string path);
-
-    virtual std::string& file_name();
-    virtual bool exists();
-    virtual size_t file_size();
-    virtual std::string mime();
-    virtual void send(int conn);
-
 private:
     std::string m_path;
-};
-
-class StringFile : public File
-{
-public:
-    StringFile(std::string source, std::string mime);
-
-    virtual std::string& file_name();
-    virtual bool exists();
-    virtual size_t file_size();
-    virtual std::string mime();
-    virtual void send(int conn);
-
-private:
-    std::string m_mime;
     std::string m_content;
-    std::string m_fake_name;
+    bool m_in_memory;
+
+    static std::map<std::string, std::string> mimes;
 };

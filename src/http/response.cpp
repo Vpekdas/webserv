@@ -87,22 +87,22 @@ void Response::_build_themes()
     m_themes["fish"] = "https://http.fish";
 }
 
-Response::Response() : m_status(200), m_body(NULL)
+Response::Response() : m_status(200)
 {
 }
 
-Response::Response(HttpStatus status) : m_status(status), m_body(NULL)
+Response::Response(HttpStatus status) : m_status(status)
 {
     (void)m_body;
 }
 
-Response Response::ok(HttpStatus status, File *file)
+Response Response::ok(HttpStatus status, File file)
 {
     Response response(status);
     response.m_body = file;
 
-    response.add_param("Content-Length", to_string(file->file_size()));
-    response.add_param("Content-Type", file->mime());
+    response.add_param("Content-Length", to_string(file.file_size()));
+    response.add_param("Content-Type", file.mime());
 
     return response;
 }
@@ -131,8 +131,8 @@ Response Response::from_cgi(HttpStatus status, std::string str)
         response.m_params[key] = value;
     }
 
-    response.m_body = new StringFile(body, "text/html");
-    response.add_param("Content-Length", to_string(response.m_body->file_size()));
+    response.m_body = File::memory(body, "text/html");
+    response.add_param("Content-Length", to_string(response.body().file_size()));
 
     return response;
 }
@@ -142,7 +142,7 @@ HttpStatus Response::status()
     return m_status;
 }
 
-File *Response::body()
+File& Response::body()
 {
     return m_body;
 }
@@ -163,12 +163,11 @@ std::string Response::encode_header()
 
 void Response::send(int conn, ServerConfig& config)
 {
-    if (!m_body)
+    if (!m_body.exists())
     {
         ws::log << ws::err << FILE_INFO << "Attempted to send a invalid response\n";
         Response err = HTTP_ERROR(500, config); // Internal server error
         err.send(conn, config);
-        delete err.m_body;
         return;
     }
 
@@ -178,7 +177,7 @@ void Response::send(int conn, ServerConfig& config)
     ssize_t s = ::send(conn, header.c_str(), header.size(), 0);
     (void)s;
 
-    m_body->send(conn);
+    m_body.send(conn);
 }
 
 void Response::add_param(std::string key, std::string value)
@@ -220,17 +219,17 @@ Response Response::http_error(HttpStatus status, ServerConfig& config, const cha
         replace_all(content, "%{path}", buf);
 #endif
 
-        response.m_body = new StringFile(content, "text/html");
+        response.m_body = File::memory(content, "text/html");
 
         response.add_param("Content-Type", "text/html");
-        response.add_param("Content-Length", to_string(response.m_body->file_size()));
+        response.add_param("Content-Length", to_string(response.body().file_size()));
     }
     else
     {
-        response.m_body = new StreamFile(config.error_pages()[status.code()]);
+        response.m_body = File::stream(config.error_pages()[status.code()]);
 
         response.add_param("Content-Type", "text/html");
-        response.add_param("Content-Length", to_string(response.m_body->file_size()));
+        response.add_param("Content-Length", to_string(response.body().file_size()));
     }
 
     // TODO:

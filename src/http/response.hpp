@@ -12,7 +12,7 @@ class Response
 public:
     Response();
 
-    static Response ok(HttpStatus status, File *file);
+    static Response ok(HttpStatus status, File file);
     static Response http_error(HttpStatus status, ServerConfig& config, const char *func, const char *file, int line);
 
     static void _build_themes();
@@ -32,13 +32,13 @@ public:
     void send(int conn, ServerConfig& config);
 
     HttpStatus status();
-    File *body();
+    File& body();
 
     std::string encode_header();
 
 private:
     HttpStatus m_status;
-    File *m_body;
+    File m_body;
     std::map<std::string, std::string> m_params;
 
     Response(HttpStatus status);

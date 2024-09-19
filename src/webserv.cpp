@@ -305,7 +305,6 @@ void Webserv::poll_events()
                         << response.status().code() << " " << response.status() << RESET << "\n";
 
             response.send(events[i].data.fd, host.config());
-            delete response.body();
 
             // Close the connection if the client either close the connection or don't want to keep
             // it alive.

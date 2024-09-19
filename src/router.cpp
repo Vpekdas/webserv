@@ -143,7 +143,7 @@ Response Router::_directory_listing(Request& req, Location& loc, std::string& pa
     replace_all(source2, "#path", req.path());
 
     closedir(dir);
-    return Response::ok(200, new StringFile(source2, File::mime_from_ext("html")));
+    return Response::ok(200, File::memory(source2, File::mime_from_ext("html")));
 }
 
 void Router::_upload_files(Location& loc, std::string& req_str)
@@ -203,7 +203,7 @@ Response Router::_route_with_location(Request& req, Location& loc, std::string& 
     {
         HttpStatus code = 307;
 
-        Response response = Response::ok(code, new StringFile("", ""));
+        Response response = Response::ok(code, File::memory("", ""));
         response.add_param("Location", res.unwrap());
         return response;
     }
@@ -278,7 +278,7 @@ Response Router::_route_with_location(Request& req, Location& loc, std::string& 
     }
     else
     {
-        return Response::ok(200, new StreamFile(final_path));
+        return Response::ok(200, File::stream(final_path));
     }
 }
 
