@@ -24,29 +24,6 @@ public:
         return m_sock_fd;
     }
 
-    Request& last_request();
-    void set_last_request(Request req);
-
-    size_t bytes_read()
-    {
-        return m_bytes_read;
-    }
-
-    void set_bytes_read(size_t s)
-    {
-        m_bytes_read = s;
-    }
-
-    bool waiting_for_body()
-    {
-        return m_body;
-    }
-
-    void set_body(bool b)
-    {
-        m_body = b;
-    }
-
     std::string& req_str()
     {
         return m_reqStr;
@@ -76,12 +53,6 @@ private:
     int m_sock_fd;
 
     std::string m_reqStr;
-
-    /* The entire was read, now we want the body. */
-    bool m_body;
-
-    Request m_req;
-    size_t m_bytes_read;
 
     int64_t m_last_event;
 };

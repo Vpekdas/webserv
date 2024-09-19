@@ -9,23 +9,13 @@ Connection::Connection()
 }
 
 Connection::Connection(int conn, int sock_fd, struct sockaddr_in addr)
-    : m_addr(addr), m_fd(conn), m_sock_fd(sock_fd), m_body(false), m_bytes_read(0), m_last_event(0)
+    : m_addr(addr), m_fd(conn), m_sock_fd(sock_fd), m_last_event(0)
 {
 }
 
 int Connection::fd() const
 {
     return m_fd;
-}
-
-Request& Connection::last_request()
-{
-    return m_req;
-}
-
-void Connection::set_last_request(Request req)
-{
-    m_req = req;
 }
 
 void Connection::set_epollin(int epoll_fd)

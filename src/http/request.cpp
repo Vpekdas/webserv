@@ -60,9 +60,8 @@ Result<Request, int> Request::parse(std::string source)
 {
     size_t pos = source.find(SEP SEP);
     std::string header = source.substr(0, pos);
+    std::string body = source.substr(pos + 4);
     std::vector<std::string> lines = split(header, SEP);
-
-    // std::cout << source << "\n";
 
     // We need at least the `GET / HTTP/1.1`
 
@@ -93,6 +92,7 @@ Result<Request, int> Request::parse(std::string source)
         return Err<Request, int>(0);
 
     request.m_protocol = protocol;
+    request.m_body = body;
     request.m_path = path.substr(0, path.find("?"));
     request._parse_path(path.substr(1));
 

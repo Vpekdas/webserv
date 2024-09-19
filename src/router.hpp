@@ -19,14 +19,14 @@ public:
     /*
         Take the path of the request and return the access to a file.
     */
-    Response route(Request& req, std::string& req_str);
+    Response route(Request& req);
 
 private:
     std::map<std::string, CGI> m_cgis;
     ServerConfig m_config;
 
-    Response _route_with_location(Request& req, Location& loc, std::string& req_str);
+    Response _route_with_location(Request& req, Location& loc);
     Response _directory_listing(Request& req, Location& loc, std::string& path);
     Response _delete_file(Request& req, Location& loc, std::string& path);
-    void _upload_files(Location& loc, std::string& req_str);
+    void _upload_files(Location& loc, Request& req);
 };

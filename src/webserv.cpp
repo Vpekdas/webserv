@@ -199,72 +199,52 @@ void Webserv::poll_events()
                 continue;
             }
 
-            if (!conn.waiting_for_body())
-                req_str.append(buf, n);
+            req_str.append(buf, n);
 
-            // We reach the end of the header, we can now parse it and check the `Content-Length` and other
-            // parameters.
-            if (!conn.waiting_for_body() && std::strstr(buf, SEP SEP))
+            if (req_str.find(SEP SEP) != std::string::npos)
             {
-                Request req = Request::parse(req_str).unwrap();
-                conn.set_last_request(req);
-                conn.set_body(true);
+                std::string header = req_str.substr(0, req_str.find(SEP SEP) + 4);
+                Request req = Request::parse(header).unwrap();
+                size_t contentLength = req.content_length();
 
-                std::string host_str = req.get_param("Host").substr(0, req.get_param("Host").find(':'));
-                Host& host = m_servers[conn.sock_fd()].default_host();
-
-                std::string leftovers = req_str.substr(req.header_size());
-                req_str.clear();
-                if (!leftovers.empty())
-                {
-                    // TODO: Process the data.
-                    conn.set_bytes_read(leftovers.size());
-                    conn.set_req_str(leftovers);
-                }
-
-                // std::cout << "qwdqwkdklqwhdkjqwhdqwkjhd\n";
-
-                if (!req.has_param("Content-Length") || leftovers.size() > host.config().max_content_length() ||
-                    leftovers.size() > req.content_length())
-                {
-                    conn.set_epollout(m_epollFd);
-                    continue;
-                }
-            }
-            else if (conn.waiting_for_body())
-            {
-                Request& req = conn.last_request();
-                std::string host_str = req.get_param("Host").substr(0, req.get_param("Host").find(':'));
-                Host& host = m_servers[conn.sock_fd()].default_host();
-
-                // TODO: Process the data.
-                conn.set_bytes_read(conn.bytes_read() + n);
-                conn.req_str().append(buf, n);
-
-                if (conn.bytes_read() > host.config().max_content_length() || conn.bytes_read() > req.content_length())
+                if (conn.req_str().size() >= contentLength)
                     conn.set_epollout(m_epollFd);
             }
-            else
-            {
-                ws::log << ws::dbg << "Malformated HTTP request\n";
-                closeConnection(conn);
-                continue;
-            }
 
-            if (n < READ_SIZE)
-                conn.set_epollout(m_epollFd);
+            // Host& host = m_servers[conn.sock_fd()].default_host();
+
+            // if (n < READ_SIZE || (headerSize != std::string::npos &&
+            //                       (conn.req_str().size() - headerSize > host.config().max_content_length() &&
+            //                        host.config().max_content_length() > 0)))
+            // {
+            //     conn.set_epollout(m_epollFd);
+            // }
+
+            // std::cout << n << "\n";
+
+            // if (n < READ_SIZE && conn.req_str().size() > 100000000)
+            //     conn.set_epollout(m_epollFd);
         }
 
         else if ((events[i].events & EPOLLOUT))
         {
             Connection& conn = m_connections[events[i].data.fd];
-            Request req = conn.last_request();
+            Result<Request, int> res = Request::parse(conn.req_str());
 
-            std::string host_str = req.get_param("Host").substr(0, req.get_param("Host").find(':'));
+            if (res.is_err())
+            {
+                ws::log << ws::dbg << "Invalid HTTP request\n";
+                closeConnection(conn);
+                continue;
+            }
+
+            Request req = res.unwrap();
+
+            std::string hostString = req.get_param("Host").substr(0, req.get_param("Host").find(':'));
             Host& host = m_servers[conn.sock_fd()].default_host();
 
-            if (m_servers[conn.sock_fd()].has_host(host_str))
-                host = m_servers[conn.sock_fd()].host(host_str);
+            if (m_servers[conn.sock_fd()].has_host(hostString))
+                host = m_servers[conn.sock_fd()].host(hostString);
 
             Response response;
             // In our case only `POST` requests have a body. Other requests will not set a `Content-Length`.
@@ -273,7 +253,8 @@ void Webserv::poll_events()
             {
                 response = HTTP_ERROR(411, host.config()); // Length required
             }
-            else if (conn.bytes_read() > req.content_length() || conn.bytes_read() > host.config().max_content_length())
+            else if (/*conn.req_str().size() > req.content_length() ||*/
+                     conn.req_str().size() > host.config().max_content_length())
             {
                 response = HTTP_ERROR(413, host.config()); // Payload Too Large
             }
@@ -281,18 +262,19 @@ void Webserv::poll_events()
             {
                 if (!req.has_param("Host"))
                 {
-                    response = m_servers[conn.sock_fd()].default_host().router().route(req, conn.req_str());
+                    response = m_servers[conn.sock_fd()].default_host().router().route(req);
                 }
                 else
                 {
                     // TODO: Check if the port is the same as the listen port I supposed
-                    response = host.router().route(req, conn.req_str());
+                    response = host.router().route(req);
                 }
             }
 
+            // std::cout << conn.req_str().substr(0, 200) << "\n";
+            // std::cout << conn.bytes_read() << "\n";
+
             conn.req_str().clear();
-            conn.set_bytes_read(0);
-            conn.set_body(false);
 
             if (req.is_keep_alive())
                 response.add_param("Connection", "keep-alive");

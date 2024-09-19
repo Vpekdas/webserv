@@ -146,33 +146,34 @@ Response Router::_directory_listing(Request& req, Location& loc, std::string& pa
     return Response::ok(200, File::memory(source2, File::mime_from_ext("html")));
 }
 
-void Router::_upload_files(Location& loc, std::string& req_str)
+void Router::_upload_files(Location& loc, Request& req)
 {
     size_t i = 0;
+    const std::string& body = req.body();
 
-    size_t boundarySize = req_str.find(SEP);
-    std::string boundary = req_str.substr(i, boundarySize + 2);
-    std::string endBoundary = req_str.substr(i, boundarySize) + "--";
+    size_t boundarySize = body.find(SEP);
+    std::string boundary = body.substr(i, boundarySize + 2);
+    std::string endBoundary = body.substr(i, boundarySize) + "--";
 
     while (i != std::string::npos)
     {
         size_t headerStart = i + boundary.size();
-        size_t contentStart = req_str.find("\r\n\r\n", headerStart) + 4;
+        size_t contentStart = body.find("\r\n\r\n", headerStart) + 4;
 
-        Request req = Request::parse_part(req_str.substr(headerStart, contentStart - headerStart)).unwrap();
+        Request req = Request::parse_part(body.substr(headerStart, contentStart - headerStart)).unwrap();
 
         std::string& contentDisp = req.get_param("Content-Disposition");
         size_t filenameStart = contentDisp.find("filename=") + 10;
         std::string filename = contentDisp.substr(
             filenameStart, contentDisp.find('\"', contentDisp.find("filename=") + 10) - filenameStart);
 
-        size_t contentEnd = req_str.find(boundary, contentStart);
+        size_t contentEnd = body.find(boundary, contentStart);
         if (contentEnd == std::string::npos)
-            contentEnd = req_str.find(endBoundary, contentStart);
+            contentEnd = body.find(endBoundary, contentStart);
 
-        i = req_str.find(boundary, contentEnd);
+        i = body.find(boundary, contentEnd);
 
-        std::string str = req_str.substr(contentStart, contentEnd - contentStart);
+        std::string str = body.substr(contentStart, contentEnd - contentStart);
         std::string filepath = loc.upload_dir().unwrap() + "/" + filename;
 
         if (filename.empty())
@@ -189,14 +190,14 @@ void Router::_upload_files(Location& loc, std::string& req_str)
             // NOTE: Unreachable if the http request is correctly formatted.
             break;
         }
-        if (req_str.substr(contentEnd, 60) == endBoundary)
+        if (body.substr(contentEnd, 60) == endBoundary)
         {
             break;
         }
     }
 }
 
-Response Router::_route_with_location(Request& req, Location& loc, std::string& req_str)
+Response Router::_route_with_location(Request& req, Location& loc)
 {
     Option<std::string> res = loc.redirect();
     if (res.is_some())
@@ -252,7 +253,7 @@ Response Router::_route_with_location(Request& req, Location& loc, std::string& 
     if (req.method() == POST && req.get_param("Content-Type").find("multipart/form-data") == 0 &&
         loc.upload_dir().is_some())
     {
-        _upload_files(loc, req_str);
+        _upload_files(loc, req);
     }
 
     std::string ext = final_path.substr(final_path.rfind('.') + 1);
@@ -270,7 +271,7 @@ Response Router::_route_with_location(Request& req, Location& loc, std::string& 
     if (n > 0)
     {
         CGI cgi(loc.cgis()[ext]);
-        Result<std::string, HttpStatus> res = cgi.process(final_path, req, m_config.cgi_timeout(), req_str);
+        Result<std::string, HttpStatus> res = cgi.process(final_path, req, m_config.cgi_timeout(), req.body());
         if (res.is_err())
             return HTTP_ERROR(res.unwrap_err(), m_config);
 
@@ -296,7 +297,7 @@ Response Router::_delete_file(Request& req, Location& loc, std::string& path)
     return HTTP_ERROR(200, m_config);
 }
 
-Response Router::route(Request& req, std::string& req_str)
+Response Router::route(Request& req)
 {
     std::string& path = req.path();
 
@@ -320,7 +321,7 @@ Response Router::route(Request& req, std::string& req_str)
 
     if (path.find(best_match_loc.route()) == 0)
     {
-        return _route_with_location(req, best_match_loc, req_str);
+        return _route_with_location(req, best_match_loc);
     }
     return HTTP_ERROR(404, m_config);
 }

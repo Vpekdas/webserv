@@ -109,6 +109,11 @@ public:
         return m_header_size;
     }
 
+    std::string& body()
+    {
+        return m_body;
+    }
+
     void set_args(std::string param);
     std::string args_str();
 
@@ -123,6 +128,7 @@ private:
     std::map<std::string, std::string> m_args;
 
     size_t m_header_size;
+    std::string m_body;
 
     void _parse_path(std::string path);
     void _parse_params(std::vector<std::string>& lines, size_t i = 1, bool ignore_invalid = false);
