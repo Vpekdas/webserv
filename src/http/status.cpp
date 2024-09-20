@@ -55,7 +55,7 @@ std::ostream& operator<<(std::ostream& os, HttpStatus const& error)
         os << "Internal server error";
         break;
     default:
-        os << "UNKNOWN"; // TODO: Unreachable
+        os << "UNKNOWN"; // NOTE: Unreachable
         break;
     }
     return os;

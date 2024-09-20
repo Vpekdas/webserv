@@ -220,7 +220,16 @@ void Webserv::poll_events()
                 else
                 {
                     std::string header = req_str.substr(0, req_str.find(SEP SEP) + 4);
-                    conn.setReq(Request::parse(header).unwrap()); // TODO:
+                    Result<Request, int> res = Request::parse(header);
+
+                    // The client send us a invalid HTTP request.
+                    if (res.is_err())
+                    {
+                        closeConnection(conn);
+                        continue;
+                    }
+
+                    conn.setReq(res.unwrap());
                     req = conn.req().unwrap();
                 }
 

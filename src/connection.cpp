@@ -27,7 +27,7 @@ void Connection::set_epollin(int epoll_fd)
     if (epoll_ctl(epoll_fd, EPOLL_CTL_MOD, m_fd, &event) == -1)
     {
         ws::log << ws::err << "epoll_ctrl() failed: " << strerror(errno) << "\n";
-        // TODO:
+        // TODO: We should close the connection if epoll_ctrl can't do its stuff.
     }
 }
 
@@ -40,6 +40,6 @@ void Connection::set_epollout(int epoll_fd)
     if (epoll_ctl(epoll_fd, EPOLL_CTL_MOD, m_fd, &event) == -1)
     {
         ws::log << ws::err << "epoll_ctrl() failed: " << strerror(errno) << "\n";
-        // TODO:
+        // TODO: We should close the connection if epoll_ctrl can't do its stuff.
     }
 }
