@@ -290,11 +290,10 @@ void Webserv::poll_events()
                 ws::log << ws::info << strmethod(req.method()) << " `" << req.path() << "` -> " << NRED
                         << response.status().code() << " " << response.status() << RESET << "\n";
 
-            response.send(events[i].data.fd, host.config());
-
-            // Close the connection if the client either close the connection or don't want to keep
-            // it alive.
-            if (!req.is_keep_alive() || req.is_closed() || response.get_param("Connection") == "close")
+            // Close the connection if the client close the connection, we don't want to keep
+            // it alive or there was an error while sending the response.
+            if (!response.send(events[i].data.fd, host.config()) || !req.is_keep_alive() || req.is_closed() ||
+                response.get_param("Connection") == "close")
                 closeConnection(conn);
             else
                 conn.set_epollin(m_epollFd);
