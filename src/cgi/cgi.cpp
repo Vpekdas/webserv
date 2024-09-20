@@ -71,14 +71,12 @@ Result<std::string, HttpStatus> CGI::process(std::string filepath, Request& req,
 
         std::vector<std::string> envp;
         envp.push_back("GATEWAY_INTERFACE=CGI/1.1");
+
+        // NOTE: This is required by `php-cgi` but not part of the CGI standard.
         envp.push_back("REDIRECT_STATUS=200");
 
         // NOTE: May be specific to php but not 100% sure
-        // if (m_path.rfind("/php-cgi") == m_path.size() - 8)
-        // {
-            std::string script_filename = "SCRIPT_FILENAME=" + filepath;
-            envp.push_back(script_filename.c_str());
-        // }
+            envp.push_back("SCRIPT_FILENAME=" + filepath);
 
         envp.push_back("REQUEST_METHOD=" + std::string(strmethod(req.method())));
         envp.push_back("HTTP_COOKIE=" + req.cookies());
@@ -128,7 +126,12 @@ Result<std::string, HttpStatus> CGI::process(std::string filepath, Request& req,
 
         g_webserv.closeFds();
 
-        // TODO: maybe use chdir here.
+        if (chdir(filepath.substr(0, filepath.rfind('/')).c_str()) == -1)
+        {
+            for (size_t i = 0; env2[i]; i++)
+                free(env2[i]);
+            free(env2);
+        }
 
         if (execve(m_path.c_str(), (char **)argv, (char **)env2) == -1)
         {

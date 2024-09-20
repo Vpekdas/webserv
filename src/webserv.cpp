@@ -100,6 +100,14 @@ void Webserv::eventLoop()
         if (has_server(config.listen_addr().unwrap()))
         {
             Server& server = get_server(config.listen_addr().unwrap());
+            std::string host = config.server_name().unwrap();
+
+            if (server.has_host(host))
+            {
+                ws::log << ws::err << "Duplicated server hostname " << host << "\n";
+                continue;
+            }
+
             server.add_host(host, config);
         }
         else
