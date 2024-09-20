@@ -161,23 +161,31 @@ std::string Response::encode_header()
     return r.str();
 }
 
-void Response::send(int conn, ServerConfig& config)
+bool Response::send(int conn, ServerConfig& config)
 {
     if (!m_body.exists())
     {
         ws::log << ws::err << FILE_INFO << "Attempted to send a invalid response\n";
         Response err = HTTP_ERROR(500, config); // Internal server error
         err.send(conn, config);
-        return;
+        return false;
     }
 
     std::string header = encode_header();
 
-    // TODO: Check errors (including SIGPIPE)
     ssize_t s = ::send(conn, header.c_str(), header.size(), 0);
-    (void)s;
 
-    m_body.send(conn);
+    if (s == -1)
+    {
+        return false;
+    }
+
+    if (!m_body.send(conn))
+    {
+        return false;
+    }
+
+    return true;
 }
 
 void Response::add_param(std::string key, std::string value)

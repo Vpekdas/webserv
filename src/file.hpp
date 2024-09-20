@@ -65,25 +65,31 @@ public:
     /*
         Send the file through a connection fd with `send`.
      */
-    void send(int conn)
+    bool send(int conn)
     {
         if (!m_in_memory)
         {
             if (!exists())
-                return;
+                return false;
 
             char buf[FILE_BUFFER_SIZE];
             int fd = open(m_path.c_str(), O_RDONLY);
 
             if (fd == -1)
-                return;
+                return false;
 
             ssize_t n;
+            ssize_t n2;
 
-            while ((n = read(fd, buf, FILE_BUFFER_SIZE)) > 0)
-                ::send(conn, buf, n, 0);
+            while ((n = read(fd, buf, FILE_BUFFER_SIZE)) > 0 && n2 > 0)
+                n2 = ::send(conn, buf, n, 0);
 
             close(fd);
+
+            if (n == -1 || n2 == -1)
+            {
+                return false;
+            }
         }
         else
         {
@@ -91,11 +97,11 @@ public:
 
             n = ::send(conn, m_content.c_str(), file_size(), 0);
 
-            // TODO:
-            // If there is an error.
             if (n == -1)
-                return;
+                return false;
         }
+
+        return true;
     }
 
     static File memory(std::string content, std::string mime)

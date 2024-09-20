@@ -29,7 +29,7 @@ public:
         return m_params[key];
     }
 
-    void send(int conn, ServerConfig& config);
+    bool send(int conn, ServerConfig& config);
 
     HttpStatus status();
     File& body();
