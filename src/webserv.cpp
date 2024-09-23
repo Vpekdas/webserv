@@ -115,6 +115,9 @@ void Webserv::eventLoop()
             Server server(config.listen_addr().unwrap());
             server.add_host(host, config);
 
+            if (server.sock_fd() == -1)
+                continue;
+
             struct epoll_event socket_event;
             socket_event.events = EPOLLIN;
             socket_event.data.fd = server.sock_fd();
@@ -134,7 +137,7 @@ void Webserv::eventLoop()
 
     if (m_servers.empty())
     {
-        ws::log << ws::err << "No server in config, stopping...\n";
+        ws::log << ws::err << "No servers running, stopping now...\n";
         close(m_epollFd);
         return;
     }

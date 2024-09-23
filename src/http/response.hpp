@@ -29,6 +29,11 @@ public:
         return m_params[key];
     }
 
+    bool has_param(const std::string& key)
+    {
+        return m_params.count(key) > 0;
+    }
+
     bool send(int conn, ServerConfig& config);
 
     HttpStatus status();

@@ -4,6 +4,7 @@
 #include <string>
 
 #include "http/request.hpp"
+#include "http/response.hpp"
 #include "http/status.hpp"
 #include "result.hpp"
 
@@ -13,7 +14,7 @@ public:
     CGI();
     CGI(std::string path);
 
-    Result<std::string, HttpStatus> process(std::string filepath, Request& req, int timeout, std::string& req_str);
+    Result<Response, HttpStatus> process(std::string filepath, Request& req, int timeout, std::string& req_str);
 
 private:
     /* The CGI to execute. */

@@ -276,11 +276,11 @@ Response Router::_route_with_location(Request& req, Location& loc)
     if (n > 0)
     {
         CGI cgi(loc.cgis()[ext]);
-        Result<std::string, HttpStatus> res = cgi.process(final_path, req, m_config.cgi_timeout(), req.body());
+        Result<Response, HttpStatus> res = cgi.process(final_path, req, m_config.cgi_timeout(), req.body());
         if (res.is_err())
             return HTTP_ERROR(res.unwrap_err(), m_config);
 
-        return Response::from_cgi(200, res.unwrap());
+        return res.unwrap();
     }
     else
     {

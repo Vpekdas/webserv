@@ -1,5 +1,6 @@
 #include "cgi.hpp"
 #include "http/request.hpp"
+#include "http/status.hpp"
 #include "logger.hpp"
 #include "result.hpp"
 #include "webserv.hpp"
@@ -20,7 +21,7 @@ CGI::CGI(std::string path) : m_path(path), m_pid(-1)
 
 // https://stackoverflow.com/questions/7047426/call-php-from-virtual-custom-web-server
 
-Result<std::string, HttpStatus> CGI::process(std::string filepath, Request& req, int timeout, std::string& req_str)
+Result<Response, HttpStatus> CGI::process(std::string filepath, Request& req, int timeout, std::string& req_str)
 {
     if (pipe(m_stdout) == -1)
         return HttpStatus(500);
@@ -76,7 +77,7 @@ Result<std::string, HttpStatus> CGI::process(std::string filepath, Request& req,
         envp.push_back("REDIRECT_STATUS=200");
 
         // NOTE: May be specific to php but not 100% sure
-            envp.push_back("SCRIPT_FILENAME=" + filepath);
+        envp.push_back("SCRIPT_FILENAME=" + filepath);
 
         envp.push_back("REQUEST_METHOD=" + std::string(strmethod(req.method())));
         envp.push_back("HTTP_COOKIE=" + req.cookies());
@@ -95,10 +96,7 @@ Result<std::string, HttpStatus> CGI::process(std::string filepath, Request& req,
 
         char **env2 = (char **)std::calloc(sizeof(char *), envp.size() + 1);
         if (!env2)
-        {
-            free(env2);
             exit(1);
-        }
 
         for (size_t i = 0; i < envp.size(); i++)
         {
@@ -126,12 +124,13 @@ Result<std::string, HttpStatus> CGI::process(std::string filepath, Request& req,
 
         g_webserv.closeFds();
 
-        if (chdir(filepath.substr(0, filepath.rfind('/')).c_str()) == -1)
-        {
-            for (size_t i = 0; env2[i]; i++)
-                free(env2[i]);
-            free(env2);
-        }
+        // TODO:
+        // if (chdir(filepath.substr(0, filepath.rfind('/')).c_str()) == -1)
+        // {
+        //     for (size_t i = 0; env2[i]; i++)
+        //         free(env2[i]);
+        //     free(env2);
+        // }
 
         if (execve(m_path.c_str(), (char **)argv, (char **)env2) == -1)
         {
@@ -174,9 +173,30 @@ Result<std::string, HttpStatus> CGI::process(std::string filepath, Request& req,
         close(m_stdout[0]);
         close(m_stdin[0]);
 
+        std::cout << WEXITSTATUS(stat_loc) << "\n";
+        std::cout << str << "\n";
+
         if (!WIFEXITED(stat_loc) || WEXITSTATUS(stat_loc) != 0 || n == -1)
             return HttpStatus(500);
 
-        return str;
+        size_t pos = str.find(SEP SEP);
+
+        // if (pos == std::string::npos)
+        //     return HttpStatus(500);
+
+        size_t headerSize = pos + 2;
+        Response response = Response::from_cgi(200, str.substr(0, headerSize));
+
+        // if (response.has_param("Content-Length"))
+        //     str = str.substr(0, std::atoi(response.get_param("Content-Length").c_str()) + headerSize);
+
+        HttpStatus status = 200;
+
+        if (response.has_param("Location"))
+        {
+            status = 307;
+        }
+
+        return Response::from_cgi(status, str);
     }
 }
