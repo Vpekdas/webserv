@@ -184,7 +184,8 @@ public:
         MISMATCH_CURLY,
         MISMATCH_ENTRY,
         UNKNOWN_ENTRY,
-        ADDR
+        ADDR,
+        INVALID_METHOD
     };
 
     static ConfigError not_found(std::string filename);
@@ -194,6 +195,7 @@ public:
     static ConfigError mismatch_entry(std::string source, Token tok, std::string expected, std::vector<Arg> args);
     static ConfigError unknown_entry(std::string source, Token tok, std::vector<std::string> entries);
     static ConfigError address(std::string source, Token addr);
+    static ConfigError invalid_method(std::string source, Token tok);
 
     ConfigError();
 

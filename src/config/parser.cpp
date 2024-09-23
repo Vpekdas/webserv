@@ -108,7 +108,6 @@ int Token::width()
         return m_str.size();
     else if (m_type == TOKEN_LEFT_CURLY || m_type == TOKEN_RIGHT_CURLY || m_type == TOKEN_LINE_BREAK)
         return 1;
-    // TODO: Implement number width
     return 0;
 }
 
@@ -116,7 +115,6 @@ std::string Token::content()
 {
     if (m_type == TOKEN_IDENTIFIER || m_type == TOKEN_STRING)
         return m_str;
-    // TODO: Implement curly + ln
     std::string s = "";
     s += m_int;
     return s;
@@ -245,8 +243,7 @@ static Option<Result<ConfigEntry, ConfigError> > _parse(std::string& source, std
     else if (tokens[i].type() == TOKEN_LEFT_CURLY && entry.args().size() == 0)
     {
         // A lone `{` without any arguments
-        return Some(Err<ConfigEntry, ConfigError>(
-            ConfigError::unexpected(source, tokens[i], TOKEN_IDENTIFIER))); // TODO: Maybe create a new error ?
+        return Some(Err<ConfigEntry, ConfigError>(ConfigError::unexpected(source, tokens[i], TOKEN_IDENTIFIER)));
     }
     else if (tokens[i].type() != TOKEN_LEFT_CURLY)
     {
@@ -498,6 +495,12 @@ ConfigError ConfigError::unknown_entry(std::string source, Token tok, std::vecto
     return err;
 }
 
+ConfigError ConfigError::invalid_method(std::string source, Token tok)
+{
+    ConfigError err(ConfigError::INVALID_METHOD, tok, source);
+    return err;
+}
+
 std::string ConfigError::_spaces(size_t n)
 {
     std::string s;
@@ -542,9 +545,10 @@ std::string ConfigError::_strerror()
 
         return "Unknown entry `" + m_token.content() + "` expected one of " + list;
     }
-    case ADDR: {
-        return ("Invalid address");
-    }
+    case ADDR:
+        return "Invalid address";
+    case INVALID_METHOD:
+        return "Invalid method `" + m_token.content() + "` expected one of GET, POST, DELETE";
     }
 }
 

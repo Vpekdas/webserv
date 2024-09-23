@@ -83,7 +83,8 @@ public:
 
             while ((n = read(fd, buf, FILE_BUFFER_SIZE)) > 0)
             {
-                if (::send(conn, buf, n, 0) == -1)
+                int n2 = ::send(conn, buf, n, 0);
+                if (n2 == -1 || n2 == 0)
                 {
                     close(fd);
                     return false;
@@ -92,7 +93,7 @@ public:
 
             close(fd);
 
-            if (n < 0)
+            if (n <= 0)
                 return false;
         }
         else
@@ -101,7 +102,7 @@ public:
 
             n = ::send(conn, m_content.c_str(), file_size(), 0);
 
-            if (n == -1)
+            if (n == -1 || n == 0)
                 return false;
         }
 

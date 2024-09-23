@@ -18,7 +18,7 @@ int Connection::fd() const
     return m_fd;
 }
 
-void Connection::set_epollin(int epoll_fd)
+bool Connection::set_epollin(int epoll_fd)
 {
     struct epoll_event event;
     event.events = EPOLLIN | EPOLLRDHUP | EPOLLERR | EPOLLHUP;
@@ -27,11 +27,12 @@ void Connection::set_epollin(int epoll_fd)
     if (epoll_ctl(epoll_fd, EPOLL_CTL_MOD, m_fd, &event) == -1)
     {
         ws::log << ws::err << "epoll_ctrl() failed: " << strerror(errno) << "\n";
-        // TODO: We should close the connection if epoll_ctrl can't do its stuff.
+        return false;
     }
+    return true;
 }
 
-void Connection::set_epollout(int epoll_fd)
+bool Connection::set_epollout(int epoll_fd)
 {
     struct epoll_event event;
     event.events = EPOLLOUT | EPOLLRDHUP | EPOLLERR | EPOLLHUP;
@@ -40,6 +41,7 @@ void Connection::set_epollout(int epoll_fd)
     if (epoll_ctl(epoll_fd, EPOLL_CTL_MOD, m_fd, &event) == -1)
     {
         ws::log << ws::err << "epoll_ctrl() failed: " << strerror(errno) << "\n";
-        // TODO: We should close the connection if epoll_ctrl can't do its stuff.
+        return false;
     }
+    return true;
 }

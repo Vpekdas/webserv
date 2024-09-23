@@ -127,7 +127,6 @@ Result<Response, HttpStatus> CGI::process(std::string filepath, Request& req, in
 
         g_webserv.closeFds();
 
-        // TODO:
         if (chdir(parent.c_str()) == -1)
         {
             for (size_t i = 0; env2[i]; i++)
@@ -149,7 +148,20 @@ Result<Response, HttpStatus> CGI::process(std::string filepath, Request& req, in
         ssize_t n;
 
         if (req.method() == POST && !req_str.empty())
+        {
             n = write(m_stdin[1], req_str.c_str(), req_str.size());
+
+            if (n == 0 || n == -1)
+            {
+                kill(m_pid, SIGQUIT);
+                close(m_stdout[1]);
+                close(m_stdout[0]);
+                close(m_stdin[0]);
+                close(m_stdin[1]);
+                return HttpStatus(500);
+            }
+        }
+
         close(m_stdin[1]);
 
         while (waitpid(m_pid, &stat_loc, WNOHANG) == 0)

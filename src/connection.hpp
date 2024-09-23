@@ -60,8 +60,8 @@ public:
         m_req = Option<Request>();
     }
 
-    void set_epollin(int epoll_fd);
-    void set_epollout(int epoll_fd);
+    bool set_epollin(int epoll_fd);
+    bool set_epollout(int epoll_fd);
 
 private:
     struct sockaddr_in m_addr;

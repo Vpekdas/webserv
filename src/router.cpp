@@ -247,13 +247,10 @@ Response Router::_route_with_location(Request& req, Location& loc)
     if (req.method() == DELETE)
         return _delete_file(req, loc, path);
 
-    if (access(final_path.c_str(), F_OK | R_OK) == -1)
-    {
-        if (S_ISDIR(sb.st_mode) && loc.indexing())
-            return _directory_listing(req, loc, path);
-        else
-            return HTTP_ERROR(404, m_config);
-    }
+    if (stat(final_path.c_str(), &sb) == -1)
+        return HTTP_ERROR(404, m_config);
+    else if (S_ISDIR(sb.st_mode) && loc.indexing())
+        return _directory_listing(req, loc, path);
 
     if (req.method() == POST && req.get_param("Content-Type").find("multipart/form-data") == 0 &&
         loc.upload_dir().is_some())

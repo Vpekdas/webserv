@@ -48,7 +48,8 @@ Result<int, ConfigError> Location::deserialize(ConfigEntry& from)
                     m_methods.push_back(POST);
                 else if (*it == "DELETE")
                     m_methods.push_back(DELETE);
-                // TODO: Return an error
+                else
+                    return ConfigError::invalid_method(entry.source(), entry.args()[1]);
             }
         }
         else if (name == "root" && entry.is_inline() && entry.args().size() == 2 &&
@@ -64,7 +65,6 @@ Result<int, ConfigError> Location::deserialize(ConfigEntry& from)
                 m_enable_indexing = true;
             else if (indexing == "disable")
                 m_enable_indexing = false;
-            // TODO: Return error
         }
         else if (name == "default" && entry.is_inline() && entry.args().size() == 2 &&
                  entry.args()[1].type() == TOKEN_STRING)

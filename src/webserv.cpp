@@ -193,17 +193,16 @@ void Webserv::poll_events()
         else if (events[i].events & EPOLLIN)
         {
             int n;
-            char buf[READ_SIZE + 1];
+            char buf[READ_SIZE];
 
             Connection& conn = m_connections[events[i].data.fd];
             std::string& req_str = conn.req_str();
 
             n = recv(events[i].data.fd, buf, READ_SIZE, 0);
-            buf[n] = '\0';
 
             conn.set_last_event(time());
 
-            if (n == -1)
+            if (n == -1 || n == 0)
             {
                 ws::log << ws::err << "recv() failed: " << strerror(errno) << "\n";
                 closeConnection(conn);
@@ -239,7 +238,10 @@ void Webserv::poll_events()
                 size_t contentLength = req.content_length();
 
                 if (req.method() != POST || conn.req_str().size() - req.header_size() >= contentLength)
-                    conn.set_epollout(m_epollFd);
+                {
+                    if (!conn.set_epollout(m_epollFd))
+                        closeConnection(conn);
+                }
             }
         }
 
@@ -266,12 +268,11 @@ void Webserv::poll_events()
 
             Response response;
             // In our case only `POST` requests have a body. Other requests will not set a `Content-Length`.
-            // TODO: `Content-Type` must also be set for `POST`
             if (req.method() == POST && !req.has_param("Content-Length"))
             {
                 response = HTTP_ERROR(411, host.config()); // Length required
             }
-            else if (/*conn.req_str().size() > req.content_length() ||*/
+            else if (host.config().max_content_length() > 0 &&
                      conn.req_str().size() - conn.req().unwrap().header_size() > host.config().max_content_length())
             {
                 response = HTTP_ERROR(413, host.config()); // Payload Too Large
@@ -305,10 +306,8 @@ void Webserv::poll_events()
             // Close the connection if the client close the connection, we don't want to keep
             // it alive or there was an error while sending the response.
             if (!response.send(events[i].data.fd, host.config()) || !req.is_keep_alive() || req.is_closed() ||
-                response.get_param("Connection") == "close")
+                response.get_param("Connection") == "close" || !conn.set_epollin(m_epollFd))
                 closeConnection(conn);
-            else
-                conn.set_epollin(m_epollFd);
         }
     }
 

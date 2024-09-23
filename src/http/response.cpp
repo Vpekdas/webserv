@@ -175,7 +175,7 @@ bool Response::send(int conn, ServerConfig& config)
 
     ssize_t s = ::send(conn, header.c_str(), header.size(), 0);
 
-    if (s == -1)
+    if (s == -1 || s == 0)
     {
         return false;
     }
@@ -240,7 +240,6 @@ Response Response::http_error(HttpStatus status, ServerConfig& config, const cha
         response.add_param("Content-Length", to_string(response.body().file_size()));
     }
 
-    // TODO:
     if (response.status().code() >= 400)
         response.add_param("Connection", "close");
 

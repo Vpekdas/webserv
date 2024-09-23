@@ -75,7 +75,7 @@ Result<Request, int> Request::parse(std::string source)
 
     std::string method = request_line[0];
     std::string path = request_line[1];
-    std::string protocol = request_line[2]; // TODO: Refuse HTTP > 1.1
+    std::string protocol = request_line[2];
 
     Request request;
     request.m_header_size = pos + 4; // "\r\n\r\n"
