@@ -204,7 +204,7 @@ $(OBJS_PATH)%.o: $(SRCS_PATH)%.cpp
 
 clean:
 	@printf "$(PURPLE)"
-	@$(RM) $(OBJS) $(OBJS_PATH) sites/rust/index.rsc
+	@$(RM) $(OBJS) $(OBJS_PATH)
 	@echo "[🧼] $(BYELLOW)Objects $(YELLOW)files have been cleaned from $(PROJECT_NAME) ✔️$(NC)\n"
 
 fclean: clean
