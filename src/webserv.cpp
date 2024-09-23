@@ -272,7 +272,7 @@ void Webserv::poll_events()
                 response = HTTP_ERROR(411, host.config()); // Length required
             }
             else if (/*conn.req_str().size() > req.content_length() ||*/
-                     conn.req_str().size() > host.config().max_content_length())
+                     conn.req_str().size() - conn.req().unwrap().header_size() > host.config().max_content_length())
             {
                 response = HTTP_ERROR(413, host.config()); // Payload Too Large
             }
