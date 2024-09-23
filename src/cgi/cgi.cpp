@@ -61,9 +61,12 @@ Result<Response, HttpStatus> CGI::process(std::string filepath, Request& req, in
         }
 
         // clang-format off
+        std::string parent = filepath.substr(0, filepath.rfind('/'));
+        std::string filename = filepath = filepath.substr(filepath.rfind('/') + 1);
+
         const char *argv[] = {
             m_path.c_str(),
-            filepath.c_str(),
+            filename.c_str(),
             NULL
         };
 
@@ -77,7 +80,7 @@ Result<Response, HttpStatus> CGI::process(std::string filepath, Request& req, in
         envp.push_back("REDIRECT_STATUS=200");
 
         // NOTE: May be specific to php but not 100% sure
-        envp.push_back("SCRIPT_FILENAME=" + filepath);
+        envp.push_back("SCRIPT_FILENAME=" + filename);
 
         envp.push_back("REQUEST_METHOD=" + std::string(strmethod(req.method())));
         envp.push_back("HTTP_COOKIE=" + req.cookies());
@@ -125,12 +128,12 @@ Result<Response, HttpStatus> CGI::process(std::string filepath, Request& req, in
         g_webserv.closeFds();
 
         // TODO:
-        // if (chdir(filepath.substr(0, filepath.rfind('/')).c_str()) == -1)
-        // {
-        //     for (size_t i = 0; env2[i]; i++)
-        //         free(env2[i]);
-        //     free(env2);
-        // }
+        if (chdir(parent.c_str()) == -1)
+        {
+            for (size_t i = 0; env2[i]; i++)
+                free(env2[i]);
+            free(env2);
+        }
 
         if (execve(m_path.c_str(), (char **)argv, (char **)env2) == -1)
         {
@@ -173,22 +176,16 @@ Result<Response, HttpStatus> CGI::process(std::string filepath, Request& req, in
         close(m_stdout[0]);
         close(m_stdin[0]);
 
-        std::cout << WEXITSTATUS(stat_loc) << "\n";
-        std::cout << str << "\n";
-
         if (!WIFEXITED(stat_loc) || WEXITSTATUS(stat_loc) != 0 || n == -1)
             return HttpStatus(500);
 
         size_t pos = str.find(SEP SEP);
 
-        // if (pos == std::string::npos)
-        //     return HttpStatus(500);
+        if (pos == std::string::npos)
+            return HttpStatus(500);
 
         size_t headerSize = pos + 2;
         Response response = Response::from_cgi(200, str.substr(0, headerSize));
-
-        // if (response.has_param("Content-Length"))
-        //     str = str.substr(0, std::atoi(response.get_param("Content-Length").c_str()) + headerSize);
 
         HttpStatus status = 200;
 
