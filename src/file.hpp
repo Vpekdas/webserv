@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <fcntl.h>
+#include <iostream>
 #include <map>
 #include <string>
 #include <sys/socket.h>
@@ -79,17 +80,20 @@ public:
                 return false;
 
             ssize_t n;
-            ssize_t n2;
 
-            while ((n = read(fd, buf, FILE_BUFFER_SIZE)) > 0 && n2 > 0)
-                n2 = ::send(conn, buf, n, 0);
+            while ((n = read(fd, buf, FILE_BUFFER_SIZE)) > 0)
+            {
+                if (::send(conn, buf, n, 0) == -1)
+                {
+                    close(fd);
+                    return false;
+                }
+            }
 
             close(fd);
 
-            if (n == -1 || n2 == -1)
-            {
+            if (n < 0)
                 return false;
-            }
         }
         else
         {
