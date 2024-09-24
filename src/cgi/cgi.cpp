@@ -93,7 +93,7 @@ Result<Response, HttpStatus> CGI::process(std::string filepath, Request& req, in
         }
         else
         {
-            envp.push_back("QUERY_STRING=" + req.args_str());
+            envp.push_back("QUERY_STRING=" + req.args_str().substr(1));
         }
         // clang-format on
 
