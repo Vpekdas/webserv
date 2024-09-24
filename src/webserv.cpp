@@ -252,19 +252,20 @@ void Webserv::poll_events()
 
             if (res.is_err())
             {
-                ws::log << ws::dbg << "Invalid HTTP request\n";
-                ws::log << conn.req_str() << "\n";
                 closeConnection(conn);
                 continue;
             }
 
             Request req = res.unwrap();
 
-            std::string hostString = req.get_param("Host").substr(0, req.get_param("Host").find(':'));
             Host& host = m_servers[conn.sock_fd()].default_host();
 
-            if (m_servers[conn.sock_fd()].has_host(hostString))
-                host = m_servers[conn.sock_fd()].host(hostString);
+            if (req.has_param("Host"))
+            {
+                std::string hostString = req.get_param("Host").substr(0, req.get_param("Host").find(':'));
+                if (m_servers[conn.sock_fd()].has_host(hostString))
+                    host = m_servers[conn.sock_fd()].host(hostString);
+            }
 
             Response response;
             // In our case only `POST` requests have a body. Other requests will not set a `Content-Length`.
@@ -279,15 +280,7 @@ void Webserv::poll_events()
             }
             else
             {
-                if (!req.has_param("Host"))
-                {
-                    response = m_servers[conn.sock_fd()].default_host().router().route(req);
-                }
-                else
-                {
-                    // TODO: Check if the port is the same as the listen port I supposed
-                    response = host.router().route(req);
-                }
+                response = host.router().route(req);
             }
 
             conn.req_str().clear();
@@ -311,27 +304,27 @@ void Webserv::poll_events()
         }
     }
 
-#define TIMEOUT 1000
+    // #define TIMEOUT 1000
 
-    while (1)
-    {
-        size_t n = 0;
+    //     while (1)
+    //     {
+    //         size_t n = 0;
 
-        for (std::map<int, Connection>::iterator it = m_connections.begin(); it != m_connections.end(); it++)
-        {
-            Connection& conn = it->second;
-            if (conn.get_last_event() - time() > TIMEOUT)
-            {
-                closeConnection(conn);
-                ws::log << ws::dbg << "Connection " << conn.addr() << " timed out\n";
-                break;
-            }
-            n++;
-        }
+    //         for (std::map<int, Connection>::iterator it = m_connections.begin(); it != m_connections.end(); it++)
+    //         {
+    //             Connection& conn = it->second;
+    //             if (conn.get_last_event() - time() > TIMEOUT)
+    //             {
+    //                 closeConnection(conn);
+    //                 ws::log << ws::dbg << "Connection " << conn.addr() << " timed out\n";
+    //                 break;
+    //             }
+    //             n++;
+    //         }
 
-        if (n == m_connections.size())
-            break;
-    }
+    //         if (n == m_connections.size())
+    //             break;
+    //     }
 }
 
 void Webserv::closeConnection(Connection& conn)

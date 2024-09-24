@@ -178,7 +178,6 @@ void Router::_upload_files(Location& loc, Request& req)
 
         if (filename.empty())
         {
-            ws::log << ws::dbg << "File name empty for upload\n";
             continue;
         }
 

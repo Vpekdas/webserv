@@ -8,7 +8,6 @@ char **g_envp;
 void sigpipe(int signum)
 {
     (void)signum;
-    ws::log << ws::dbg << "SIGPIPE received\n";
 }
 
 void signal_handler(int signum)
