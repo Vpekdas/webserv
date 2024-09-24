@@ -15,16 +15,12 @@
     {
 ?>
     <div class="login-form">
-        <h1>Login</h1>
-
         <form action="login.php" method="POST">
             <div>
-                Username:
-                <input type="text" name="username" />
+                <input type="text" name="username" placeholder="Username" autocomplete="off" />
             </div>
             <div>
-                Password:
-                <input type="password" name="password" />
+                <input type="password" name="password" placeholder="Password" autocomplete="off" />
             </div>
             <input type="submit" name="submit" value="Login" />
         </form>

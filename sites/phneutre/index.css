@@ -1,5 +1,40 @@
 .login-form {
     text-align: center;
+    background-color: #666;
+    border-radius: .8em;
+    width: 30%;
+    padding: 60px;
+    margin: auto;
+    box-shadow: 2px 3px #888888;
+}
+
+.login-form input[type="text"],
+.login-form input[type="password"] {
+    outline: none;
+    border: 0;
+    border-bottom: 3px gray solid;
+    margin-bottom: 8px;
+    font-size: 1.7em;
+    padding: .3em;
+    width: 90%;
+}
+
+.login-form input[type="text"]:focus,
+.login-form input[type="password"]:focus {
+    outline: none;
+    border-bottom: 3px lightgray solid;
+}
+
+.login-form input[type="submit"] {
+    width: 90%;
+    font-size: 1.3em;
+    background-color: #888;
+    border: none;
+    border-radius: 3px;
+}
+
+.login-form input[type="submit"]:hover {
+    background-color: #aaa;
 }
 
 * {
