@@ -94,7 +94,7 @@ Result<int, ConfigError> Location::deserialize(ConfigEntry& from)
     return 0;
 }
 
-ServerConfig::ServerConfig() : m_cgi_timeout(0)
+ServerConfig::ServerConfig() : m_cgi_timeout(1000)
 {
 }
 
@@ -132,6 +132,10 @@ Result<int, ConfigError> ServerConfig::deserialize(ConfigEntry& from)
                  entry.args()[1].type() == TOKEN_NUMBER && entry.args()[2].type() == TOKEN_STRING)
         {
             int status_code = entry.args()[1].number();
+
+            if (status_code < 400 || status_code >= 600)
+                return ConfigError::not_in_range(entry.source(), entry.args()[1], 400, 599);
+
             std::string page = entry.args()[2].str();
             m_error_pages[status_code] = page;
         }

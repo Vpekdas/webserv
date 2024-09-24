@@ -30,7 +30,7 @@ public:
     Token();
 
     static Token ident(std::string str, int line, int column);
-    static Token num(int num, int line, int column);
+    static Token num(int64_t num, int line, int column);
     static Token str(std::string str, int line, int column);
     static Token left_curly(int line, int column);
     static Token right_curly(int line, int column);
@@ -39,7 +39,7 @@ public:
 
     TokenType type() const;
     std::string str() const;
-    int number() const;
+    int64_t number() const;
     int line() const;
     int column() const;
 
@@ -49,7 +49,7 @@ public:
 private:
     TokenType m_type;
     std::string m_str;
-    int m_int;
+    int64_t m_int;
 
     int m_line;
     int m_column;
@@ -185,7 +185,8 @@ public:
         MISMATCH_ENTRY,
         UNKNOWN_ENTRY,
         ADDR,
-        INVALID_METHOD
+        INVALID_METHOD,
+        NOT_IN_RANGE
     };
 
     static ConfigError not_found(std::string filename);
@@ -196,6 +197,7 @@ public:
     static ConfigError unknown_entry(std::string source, Token tok, std::vector<std::string> entries);
     static ConfigError address(std::string source, Token addr);
     static ConfigError invalid_method(std::string source, Token tok);
+    static ConfigError not_in_range(std::string source, Token tok, int min, int max);
 
     ConfigError();
 
@@ -245,6 +247,11 @@ private:
     {
         std::vector<std::string> entries;
     } m_unknown;
+
+    struct NotInRange
+    {
+        int min, max;
+    } m_range;
 
     ConfigError(Type type, Token token, std::string source);
 

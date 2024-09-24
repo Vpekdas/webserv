@@ -1,6 +1,7 @@
 #include "config/parser.hpp"
 #include "option.hpp"
 #include "result.hpp"
+#include "string.hpp"
 #include <cstdlib>
 #include <fstream>
 #include <iomanip>
@@ -23,7 +24,7 @@ Token Token::ident(std::string str, int line, int column)
     return t;
 }
 
-Token Token::num(int num, int line, int column)
+Token Token::num(int64_t num, int line, int column)
 {
     Token t;
     t.m_type = TOKEN_NUMBER;
@@ -87,7 +88,7 @@ std::string Token::str() const
     return m_str;
 }
 
-int Token::number() const
+int64_t Token::number() const
 {
     return m_int;
 }
@@ -108,6 +109,8 @@ int Token::width()
         return m_str.size();
     else if (m_type == TOKEN_LEFT_CURLY || m_type == TOKEN_RIGHT_CURLY || m_type == TOKEN_LINE_BREAK)
         return 1;
+    else if (m_type == TOKEN_NUMBER)
+        return to_string(m_int).size();
     return 0;
 }
 
@@ -115,9 +118,7 @@ std::string Token::content()
 {
     if (m_type == TOKEN_IDENTIFIER || m_type == TOKEN_STRING)
         return m_str;
-    std::string s = "";
-    s += m_int;
-    return s;
+    return to_string(m_int);
 }
 
 std::ostream& operator<<(std::ostream& os, Token const& tok)
@@ -415,7 +416,10 @@ static Option<Token> _next_token(size_t *index, std::string source, size_t *line
     else if (buf == "}")
         return Some(Token::right_curly(*line, start_column));
     else if (_is_all_digits(buf))
-        return Some(Token::num(std::atoi(buf.c_str()), *line, start_column));
+    {
+        int64_t i = std::atoll(buf.c_str());
+        return Some(Token::num(i, *line, start_column));
+    }
     else if (is_string)
         return Some(Token::str(buf, *line, start_column));
 
@@ -501,6 +505,14 @@ ConfigError ConfigError::invalid_method(std::string source, Token tok)
     return err;
 }
 
+ConfigError ConfigError::not_in_range(std::string source, Token tok, int min, int max)
+{
+    ConfigError err(ConfigError::NOT_IN_RANGE, tok, source);
+    err.m_range.min = min;
+    err.m_range.max = max;
+    return err;
+}
+
 std::string ConfigError::_spaces(size_t n)
 {
     std::string s;
@@ -549,6 +561,9 @@ std::string ConfigError::_strerror()
         return "Invalid address";
     case INVALID_METHOD:
         return "Invalid method `" + m_token.content() + "` expected one of GET, POST, DELETE";
+    case NOT_IN_RANGE:
+        return "Value " + m_token.content() + " is not in range " + to_string(m_range.min) + ".." +
+               to_string(m_range.max);
     }
 }
 
