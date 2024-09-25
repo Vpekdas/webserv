@@ -239,7 +239,11 @@ Response Router::_route_with_location(Request& req, Location& loc)
         return HTTP_ERROR(404, m_config);
 
     if (S_ISDIR(sb.st_mode))
+    {
         final_path = path + "/" + loc.default_page().unwrap_or("");
+        if (stat(final_path.c_str(), &sb) == -1)
+            final_path = path;
+    }
     else
         final_path = path;
 
