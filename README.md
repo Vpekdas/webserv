@@ -1,6 +1,13 @@
 # Webserv
 
-## Screenshots (it also works on Safari ???)
+## Table of Contents
+1. [Description](#description)
+2. [Installation](#installation)
+3. [Run](#run)
+4. [Credits](#credits)
+5. [Contributing](#contributing)
+
+## Description
 
 1. Our beautifully designed file upload page. It features two forms on a clean, minimalist layout :)
 <img width="1440" alt="Screenshot 2024-11-03 at 19 06 06" src="https://github.com/user-attachments/assets/b19ab23e-61e7-4295-8bb8-33ea350af322">
@@ -15,57 +22,11 @@
 4. Of course, I won't miss a chance to showcase my portfolio!
 <img width="1440" alt="Screenshot 2024-11-03 at 19 09 01" src="https://github.com/user-attachments/assets/22c8b1b9-31b8-47bc-8355-cd18934c6e60">
 
-# Table of Contents
-1. [Description](#description)
-2. [Installation Instructions](#installation-instructions)
-3. [Usage Instructions](#usage-instructions)
-4. [Key Features](#key-features)
-5. [Acknowledgments](#acknowledgments)
+Webserv is a project from the 42 Common Core curriculum. The goal is to replicate the features of a web server, such as Nginx. As part of the 42 curriculum, we are limited to using only C++98 features and must handle I/O operations using tools like epoll. One of the key restrictions is that we cannot use read() function calls unless there are active epoll events, ensuring efficiency.
 
-## Description
+### Purpose
 
-Webserv is a web server project that is part of the 42 curriculum and is implemented in C++. The primary goal of this project is to create a fully functional HTTP server that can handle multiple client requests concurrently. The server is designed to be compliant with HTTP/1.1 standards and supports various features such as serving static files, handling CGI scripts, and managing multiple virtual hosts.
-
-The project focuses on the core concepts of network programming, including socket creation, binding, listening, and accepting connections. It also delves into advanced topics such as asynchronous I/O using epoll, efficient request parsing, and response generation. The challenge lies in creating a robust and efficient server that can handle high loads and provide a reliable service.
-
-This project is an excellent opportunity to deepen your understanding of network programming and enhance your skills in C++. It tests your knowledge of various programming concepts, including data structures, algorithms, memory management, and system calls.
-
-## Installation Instructions
-
-1. **Check Operating System**: This project is designed to run on Linux systems. Ensure you are running a compatible Linux distribution before proceeding with the installation.
-
-2. **Install a C++ compiler**: If you don't already have a C compiler installed, you will need one to build and use this library. You can install the [Clang compiler](https://clang.llvm.org).
-   
-- On a Mac, you should already have Clang installed as part of Xcode Command Line Tools. You can confirm this by running clang --version in your terminal. If it's not installed, you'll be prompted to install it.
-
-- On a Linux machine, use the package manager for your distribution. For example, on Ubuntu:
-```bash
-sudo apt install clang
-```
-
-## Usage Instructions
-
-1. **Compile the game**: Navigate to the project directory and compile the game using the `make` command:
-```bash
-make
-```
-
-You can also do `make extra` to view my portfolio :).
-
-This will create an executable file named `webserv`.
-
-2. Select a Configuration: You can either choose a configuration file from the `config` folder or create your own. The provided configuration files are modeled after Nginx configurations, offering a familiar structure and options.
-
-3. Run the Executable: To start the web server, execute the following command in your terminal:
-```bash
-./webserv configs/multihost.conf
-```
-
-4. Now you can open the Firefox browser and navigate to the server's address to start using it as a web server.
-
-For example, navigate to `localhost:port/index.html` if it is specified in the root directory, or `localhost:port/another_page` for another page or script.
-
-## Key Features
+Webserv can be used as a web server, similar to Nginx, although it does not support as many features. However, it handles the following core functionalities:
 
 - Compatible with Firefox browser.
 - Compliant with HTTP/1.1 standards.
@@ -80,14 +41,54 @@ For example, navigate to `localhost:port/index.html` if it is specified in the r
 - Directory listing.
 - HTTP redirection.
 
-I was responsible for the following features:
+### Technologies used
 
-* Handling all `epoll` event loops: setting up the listening loop and modifying the structure to either `EPOLLIN` or `EPOLLOUT` to determine if we are still receiving the request or are ready to send a response.
-* Creating, binding, and listening to the socket.
-* Designing the directory listing page, mainly inspired by the original in the Firefox browser.
-* Implementing file uploads, including parsing multipart/form-data to handle multiple file uploads.
+- C++
+- Make
 
-## Acknowledgments
+### Challenges and Future Features
+
+The main challenges were understanding I/O operations, selecting the appropriate functions to handle them, and grasping how sockets work in C. Here are the features I was in charge of:
+
+- Handling all epoll event loops: Setting up the listening loop and adjusting the structure to use `EPOLLIN` or `EPOLLOUT` to determine whether we are still receiving a request or are ready to send a response.
+- Creating, binding, and listening to the socket: Establishing the socket and ensuring it was ready to handle incoming HTTP requests.
+- Designing the directory listing page: Inspired by the directory listing in the Firefox browser, ensuring a user-friendly view of available files.
+- Implementing file uploads: Parsing multipart/form-data to handle multiple file uploads, ensuring the server processes and stores files correctly.
+
+I'm not planning to add new features.
+
+## Installation
+
+- Ensure you have a C compiler installed, such as [Clang](https://clang.llvm.org/) or [GCC](https://gcc.gnu.org/)
+```bash
+clang --version
+gcc --version
+```
+- Ensure you have installed [Make](https://www.gnu.org/software/make/) to build the project
+```bash
+make --version
+```
+
+This project is designed to run only on Unix-based systems since it uses Epoll for I/O handling. However, I developed it on macOS using [OrbStack](https://orbstack.dev/). OrbStack allows you to create lightweight containers to build and run the project, making it possible to work on macOS even though the project is intended for Unix systems.
+
+## Run
+
+1. Build the project:
+```bash
+make
+```
+
+2. Run the project with a preconfigured config or create your own configuration by following the provided templates:
+```bash
+./webserv config
+```
+
+3. Access the server:
+
+- Navigate to localhost:port/index.html if it's specified in the root directory.
+- For other pages or scripts, visit localhost:port/another_page or any other route defined in your configuration.
+
+## Credits
 
 Special thanks to the following individuals and resources for their contributions to this project:
 
@@ -97,3 +98,33 @@ Special thanks to the following individuals and resources for their contribution
 * Parsing the HTTP requests to populate our internal classes and structures, allowing me to access the necessary variables for my part.
 * Managing error handling, including customized error pages, setting up routers, multiple servers, and the logger.
 * Managing the MIME types table.
+
+## Contributing
+
+To report issues, please create an issue here:  [issue tracker](https://github.com/Vpekdas/webserv/issues).
+
+To contribute, follow these steps:
+
+1. **Fork the repository**: Start by forking the repository to your own GitHub account.
+
+2. **Clone the repository**: Clone the forked repository to your local machine.
+```bash
+git clone https://github.com/Vpekdas/webserv
+```
+
+3. **Create a new branch**: Create a new branch for each feature or bug fix you're working on.
+```bash
+git checkout -b your-branch-name
+```
+
+4. **Commit your changes**: Commit your changes.
+```bash
+git commit -m "Your commit message"
+```
+
+5. **Push your changes**: Push your changes to your forked repository on GitHub.
+```bash
+git push origin your-branch-name
+```
+
+6. **Create a pull request**: Go to your forked repository on GitHub and create a new pull request against the master branch.
