@@ -9,6 +9,10 @@
 
 ## Description
 
+Webserv is a project from the 42 Common Core curriculum. The goal is to replicate the features of a web server, such as Nginx. As part of the 42 curriculum, we are limited to using only C++98 features and must handle I/O operations using tools like epoll. One of the key restrictions is that we cannot use read() function calls unless there are active epoll events, ensuring efficiency.
+
+## Screenshot
+
 1. Our beautifully designed file upload page. It features two forms on a clean, minimalist layout :)
 <img width="1440" alt="Screenshot 2024-11-03 at 19 06 06" src="https://github.com/user-attachments/assets/b19ab23e-61e7-4295-8bb8-33ea350af322">
 
@@ -21,8 +25,6 @@
 
 4. Of course, I won't miss a chance to showcase my portfolio!
 <img width="1440" alt="Screenshot 2024-11-03 at 19 09 01" src="https://github.com/user-attachments/assets/22c8b1b9-31b8-47bc-8355-cd18934c6e60">
-
-Webserv is a project from the 42 Common Core curriculum. The goal is to replicate the features of a web server, such as Nginx. As part of the 42 curriculum, we are limited to using only C++98 features and must handle I/O operations using tools like epoll. One of the key restrictions is that we cannot use read() function calls unless there are active epoll events, ensuring efficiency.
 
 ### Purpose
 
